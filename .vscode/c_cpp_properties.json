@@ -4,7 +4,8 @@
             "name": "Linux",
             "includePath": [
                 "${default}",
-                "/home/epsda/dependencies/build/release-install-cpp11/include"
+                "/home/epsda/dependencies/build/release-install-cpp11/include",
+                "${workspaceFolder}/src"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
