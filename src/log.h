@@ -55,12 +55,17 @@ namespace log_system
     public:
         static std::shared_ptr<LogSystem> getInstance()
         {
-            if (!baseLog_)
-            {
-                std::unique_lock<std::mutex> lock(single_mtx_);
-                if (!baseLog_)
-                    baseLog_ = std::shared_ptr<LogSystem>(new LogSystem());
-            }
+            // if (!baseLog_)
+            // {
+            //     std::unique_lock<std::mutex> lock(single_mtx_);
+            //     if (!baseLog_)
+            //         baseLog_ = std::shared_ptr<LogSystem>(new LogSystem());
+            // }
+
+            // 代替双检锁
+            static std::once_flag init_flag;
+            std::call_once(init_flag, []
+                           { baseLog_ = std::shared_ptr<LogSystem>(new LogSystem()); });
 
             return baseLog_;
         }
@@ -68,14 +73,16 @@ namespace log_system
         // 启用文件输出
         void enableFileLog()
         {
-            std::unique_lock<std::mutex> lock(single_mtx_);
+            std::unique_lock<std::mutex> lock(mode_mtx_);
+            spdlog::drop_all(); // 清除上一次的指针
             logger_ = spdlog::basic_logger_mt("file_log", filepath);
         }
 
         // 启用控制台输出
         void enableConsoleLog()
         {
-            std::unique_lock<std::mutex> lock(single_mtx_);
+            std::unique_lock<std::mutex> lock(mode_mtx_);
+            spdlog::drop_all(); // 清除上一次的指针
             logger_ = spdlog::stdout_color_mt("console_log");
         }
 
