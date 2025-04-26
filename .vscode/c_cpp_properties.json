@@ -5,7 +5,8 @@
             "includePath": [
                 "${default}",
                 "/home/epsda/dependencies/build/release-install-cpp11/include",
-                "${workspaceFolder}/src"
+                "${workspaceFolder}/rpc_framework",
+                "${workspaceFolder}"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
