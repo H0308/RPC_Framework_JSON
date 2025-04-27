@@ -4,49 +4,12 @@
 #include <memory>
 #include <functional>
 #include "public_data.h"
+#include "base_message.h"
 
 namespace abstracts
 {
     using namespace public_data;
-
-    // 消息抽象
-    class BaseMessage
-    {
-    public:
-        using ptr = std::shared_ptr<BaseMessage>;
-
-        virtual ~BaseMessage() {}
-        // 设置请求/响应ID
-        virtual void setId(const std::string &id)
-        {
-            req_resp_id_ = id;
-        }
-        // 获取请求/响应ID
-        virtual std::string getReqRespId() 
-        { 
-            return req_resp_id_; 
-        }
-        // 设置消息类型
-        virtual void setMType(MType mtype)
-        {
-            mtype_ = mtype;
-        }
-        // 获取消息类型
-        virtual MType mtype() 
-        { 
-            return mtype_; 
-        }
-        // 序列化
-        virtual std::string serialize(std::string &msg) = 0;
-        // 反序列化
-        virtual bool deserialize(const std::string &msg) = 0;
-        // 检查消息是否合法
-        virtual bool check() = 0;
-
-    private:
-        MType mtype_;
-        std::string req_resp_id_;
-    };
+    using namespace base_message;
 
     // 抽象缓冲区
     class BaseBuffer
