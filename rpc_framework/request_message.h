@@ -11,6 +11,7 @@ namespace request_message
     class RpcRequest : public json_message::JsonRequest
     {
     public:
+        using ptr = std::shared_ptr<RpcRequest>;
         // 实现检查方法
         virtual bool check() override
         {
@@ -68,6 +69,7 @@ namespace request_message
     class TopicRequest : public json_message::JsonRequest
     {
     public:
+        using ptr = std::shared_ptr<TopicRequest>;
         // 检查三个字段
         virtual bool check() override
         {
@@ -147,10 +149,10 @@ namespace request_message
 
     // 服务请求类
     // 主要字段就是方法名、服务类型和主机信息
-    using host_addr_t = std::pair<std::string, uint16_t>;
     class ServiceRequest : public json_message::JsonRequest
     {
     public:
+        using ptr = std::shared_ptr<ServiceRequest>;
         // 检查字段
         virtual bool check() override
         {
@@ -172,7 +174,8 @@ namespace request_message
 
             // 检查消息
             // 判断是否存在主机信息
-            if ((body_[KEY_HOST].isNull() || body_[KEY_HOST].isObject()) &&
+            if ((body_[KEY_OPTYPE].asInt() != static_cast<int>(public_data::ServiceOptype::Service_discover)) &&
+                (body_[KEY_HOST].isNull() || body_[KEY_HOST].isObject()) &&
                 (body_[KEY_HOST][KEY_HOST_IP].isNull() || body_[KEY_HOST][KEY_HOST_IP].isString()) &&
                 (body_[KEY_HOST][KEY_HOST_PORT].isNull() || body_[KEY_HOST][KEY_HOST_PORT].isInt()))
             {
@@ -197,7 +200,7 @@ namespace request_message
         }
 
         // 设置和获取服务操作类型
-        void setHost(const host_addr_t &host){
+        void setHost(const public_data::host_addr_t &host){
             // host_.first = host[KEY_HOST][KEY_HOST_IP].asString();
             // host_.second = host[KEY_HOST][KEY_HOST_PORT].asInt();
             // 以一个对象的方式插入到body_中
@@ -207,10 +210,10 @@ namespace request_message
             body_[KEY_HOST] = val;
         }
 
-        host_addr_t getHost()
+        public_data::host_addr_t getHost()
         {
             // return host_;
-            host_addr_t host;
+            public_data::host_addr_t host;
             host.first = body_[KEY_HOST][KEY_HOST_IP].asString();
             host.second = body_[KEY_HOST][KEY_HOST_PORT].asInt();
 
@@ -221,7 +224,7 @@ namespace request_message
         // 不需要成员，直接设置到正文JSON对象中
         // std::string name_;              // 方法名
         // public_data::ServiceOptype op_; // 服务操作类型
-        // host_addr_t host_; // 主机信息
+        // public_data::host_addr_t host_; // 主机信息
     };
 }
 

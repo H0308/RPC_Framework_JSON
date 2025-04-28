@@ -92,12 +92,12 @@ namespace json_message
         }
 
         // 设置和返回状态码
-        void setRCode(const public_data::RCode r)
+        virtual void setRCode(const public_data::RCode r)
         {
             body_[KEY_RCODE] = static_cast<int>(r);
         }
 
-        public_data::RCode getRCode()
+        virtual public_data::RCode getRCode()
         {
             return static_cast<public_data::RCode>(body_[KEY_RCODE].asInt());
         }

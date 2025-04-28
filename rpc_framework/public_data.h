@@ -2,9 +2,13 @@
 #define __rpc_public_data_h__
 
 #include <string>
+#include <cstdint>
 
 namespace public_data
 {
+    // 主机信息类型
+    using host_addr_t = std::pair<std::string, uint16_t>;
+
 // 请求和响应中body需要的字段
 #define KEY_METHOD "method"       // 方法名
 #define KEY_PARAMS "parameters"   // 方法参数
