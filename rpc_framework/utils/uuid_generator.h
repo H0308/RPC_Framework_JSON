@@ -7,7 +7,7 @@
 
 namespace uuid_generator
 {
-    class Generator
+    class UuidGenerator
     {
     public:
         static std::string generate_uuid()

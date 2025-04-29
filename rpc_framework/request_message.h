@@ -101,17 +101,17 @@ namespace request_message
             return true;
         }
 
-        // 设置和获取方法名
-        void setMethod(const std::string &n)
+        // 设置和获取主题名称
+        void setTopicName(const std::string &n)
         {
             // name_ = n;
-            body_[KEY_METHOD] = n;
+            body_[KEY_TOPIC_KEY] = n;
         }
 
-        std::string getMethod()
+        std::string getTopicName()
         {
             // return name_;
-            return body_[KEY_METHOD].asString();
+            return body_[KEY_TOPIC_KEY].asString();
         }
 
         // 设置和获取主题操作类型
@@ -174,16 +174,29 @@ namespace request_message
 
             // 检查消息
             // 判断是否存在主机信息
+            // ! 为什么是不等于而不是等于？因为服务发现是需要将主机信息作为结果返回给上层
+            // ! 而对于其他服务类型来说，都需要在请求中携带自己的信息用于写入到注册中心
             if ((body_[KEY_OPTYPE].asInt() != static_cast<int>(public_data::ServiceOptype::Service_discover)) &&
-                (body_[KEY_HOST].isNull() || body_[KEY_HOST].isObject()) &&
-                (body_[KEY_HOST][KEY_HOST_IP].isNull() || body_[KEY_HOST][KEY_HOST_IP].isString()) &&
-                (body_[KEY_HOST][KEY_HOST_PORT].isNull() || body_[KEY_HOST][KEY_HOST_PORT].isInt()))
+                (body_[KEY_HOST].isNull() || !body_[KEY_HOST].isObject()) &&
+                (body_[KEY_HOST][KEY_HOST_IP].isNull() || !body_[KEY_HOST][KEY_HOST_IP].isString()) &&
+                (body_[KEY_HOST][KEY_HOST_PORT].isNull() || !body_[KEY_HOST][KEY_HOST_PORT].isInt()))
             {
                 LOG(Level::Warning, "主机信息错误");
                 return false;
             }
 
             return true;
+        }
+
+        // 设置/获取服务操作类型
+        void setServiceOptype(const public_data::ServiceOptype so)
+        {
+            body_[KEY_OPTYPE] = static_cast<int>(so);
+        }
+
+        public_data::ServiceOptype getServiceOptye()
+        {
+            return static_cast<public_data::ServiceOptype>(body_[KEY_OPTYPE].asInt());
         }
 
         // 设置和获取方法名
@@ -200,13 +213,15 @@ namespace request_message
         }
 
         // 设置和获取服务操作类型
-        void setHost(const public_data::host_addr_t &host){
+        void setHost(const public_data::host_addr_t &host)
+        {
             // host_.first = host[KEY_HOST][KEY_HOST_IP].asString();
             // host_.second = host[KEY_HOST][KEY_HOST_PORT].asInt();
             // 以一个对象的方式插入到body_中
             Json::Value val;
-            val[KEY_HOST][KEY_HOST_IP] = host.first;
-            val[KEY_HOST][KEY_HOST_PORT] = host.first;
+            // ! 这里不需要指定host，直接指定IP和Port即可，再讲整体存入到host中
+            val[KEY_HOST_IP] = host.first;
+            val[KEY_HOST_PORT] = host.second;
             body_[KEY_HOST] = val;
         }
 

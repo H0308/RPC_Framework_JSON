@@ -22,8 +22,9 @@ namespace response_message
             }
 
             // 判断返回值
-            // 返回值为JSON对象，因为不能确定上层返回值类型
-            if (body_[KEY_RESULT].isNull() || !body_[KEY_RESULT].isObject())
+            // 因为返回值可能不止一种类型，所以此处不判断返回值的类型是否正确
+            // 而是交给上层进行处理
+            if (body_[KEY_RESULT].isNull())
             {
                 LOG(Level::Warning, "返回值错误");
                 return false;
@@ -85,6 +86,17 @@ namespace response_message
             }
 
             return true;
+        }
+
+        // 设置/获取服务类型
+        public_data::ServiceOptype getServiceOptype()
+        {
+            return static_cast<public_data::ServiceOptype>(body_[KEY_OPTYPE].asInt());
+        }
+
+        void setServiceOptye(const public_data::ServiceOptype& o)
+        {
+            body_[KEY_OPTYPE] = static_cast<int>(o);
         }
 
         // 设置/获取方法名和主机信息

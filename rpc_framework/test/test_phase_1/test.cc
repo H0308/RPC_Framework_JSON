@@ -29,7 +29,7 @@ int main()
     }
 
     // uuid生成
-    std::string uuid = uuid_generator::Generator().generate_uuid();
+    std::string uuid = uuid_generator::UuidGenerator::generate_uuid();
 
     std::cout << uuid << std::endl;
     return 0;
