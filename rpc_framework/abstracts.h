@@ -14,19 +14,7 @@ namespace abstracts
     using namespace base_buffer;
 
 
-    // 抽象协议类
-    class BaseProtocol
-    {
-    public:
-        using ptr = std::shared_ptr<BaseProtocol>;
-        // 判断是否是有效数据
-        virtual bool canProcessed(const BaseBuffer::ptr &buf) = 0;
-        // 收到消息时的处理，从buffer中读取数据交给Message类处理
-        virtual bool onMessage(const BaseBuffer::ptr &buf, BaseMessage::ptr &msg) = 0;
-        // 序列化接口，用于序列化Message类的成员
-        virtual std::string serialize(const BaseMessage::ptr &msg) = 0;
-        // 不提供反序列化
-    };
+
 
     // 抽象连接类
     class BaseConnection

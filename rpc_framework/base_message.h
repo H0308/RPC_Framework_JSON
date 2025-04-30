@@ -35,7 +35,7 @@ namespace base_message
             mtype_ = mtype;
         }
         // 获取消息类型
-        virtual MType mtype()
+        virtual MType getMtype()
         {
             return mtype_;
         }
