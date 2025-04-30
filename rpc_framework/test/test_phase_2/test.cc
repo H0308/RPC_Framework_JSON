@@ -195,6 +195,7 @@ void testServiceResp()
 
     ssp->setMethod("add");
     ssp->setRCode(public_data::RCode::RCode_fine);
+    ssp->setServiceOptye(public_data::ServiceOptype::Service_discover);
 
     std::vector<public_data::host_addr_t> hosts;
     hosts.emplace_back("127.0.0.1", 8080);

@@ -76,7 +76,7 @@ namespace response_message
 
             // 判断操作类型是否存在且为Service_discover
             // 如果存在需要判断是否存在方法名和主机信息数组
-            if ((body_[KEY_OPTYPE].isInt() != static_cast<int>(public_data::ServiceOptype::Service_discover)) &&
+            if ((body_[KEY_OPTYPE].isInt() == static_cast<int>(public_data::ServiceOptype::Service_discover)) &&
                 (body_[KEY_METHOD].isNull() || !body_[KEY_METHOD].isString()) &&
                 (body_[KEY_HOST][KEY_HOST_IP].isNull() || !body_[KEY_HOST][KEY_HOST_IP].isString()) &&
                 (body_[KEY_HOST][KEY_HOST_PORT].isNull() || !body_[KEY_HOST][KEY_HOST_PORT].isInt()))
@@ -114,12 +114,13 @@ namespace response_message
         void setHosts(const std::vector<public_data::host_addr_t> &hosts)
         {
             std::for_each(hosts.begin(), hosts.end(), [this](public_data::host_addr_t h)
-                          {
+            {
                 Json::Value host;
-                host[KEY_HOST][KEY_HOST_IP] = h.first;
-                host[KEY_HOST][KEY_HOST_PORT] = h.second;
+                host[KEY_HOST_IP] = h.first;
+                host[KEY_HOST_PORT] = h.second;
 
-                body_[KEY_HOST].append(host); });
+                body_[KEY_HOST].append(host); 
+            });
         }
 
         std::vector<public_data::host_addr_t> getHosts()
@@ -127,10 +128,8 @@ namespace response_message
             std::vector<public_data::host_addr_t> hosts;
             int length = body_[KEY_HOST].size();
             for (int i = 0; i < length; i++)
-            {
                 hosts.emplace_back(body_[KEY_HOST][i][KEY_HOST_IP].asString(),
                                    body_[KEY_HOST][i][KEY_HOST_PORT].asInt());
-            }
 
             return hosts;
         }
