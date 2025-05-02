@@ -2,21 +2,21 @@
 #define __rpc_length_value_protocal_h__
 
 #include <rpc_framework/utils/message_factory.h>
-#include <rpc_framework/base_protocal.h>
+#include <rpc_framework/base_protocol.h>
 #include <rpc_framework/log.h>
 #include <arpa/inet.h>
 
-namespace length_value_protocal
+namespace length_value_protocol
 {
     using namespace log_system;
 
     const int32_t valid_length_field_length = 4;
 
     // LV格式的协议
-    class LengthValueProtocal : public base_protocal::BaseProtocol
+    class LengthValueProtocol : public base_protocol::BaseProtocol
     {
     public:
-        using ptr = std::shared_ptr<LengthValueProtocal>;
+        using ptr = std::shared_ptr<LengthValueProtocol>;
         // 判断是否是有效数据
         // 判断有效数据长度+有效数据长度字段的长度是否等于或者小于收到的总长度
         virtual bool canProcessed(const base_buffer::BaseBuffer::ptr &buf) override
@@ -37,7 +37,7 @@ namespace length_value_protocal
             return true;
         }
         // 收到消息时的处理，从buffer中读取数据交给Message类处理
-        virtual bool getContentFromProtocal(const base_buffer::BaseBuffer::ptr &buf, base_message::BaseMessage::ptr &msg) override
+        virtual bool getContentFromProtocol(const base_buffer::BaseBuffer::ptr &buf, base_message::BaseMessage::ptr &msg) override
         {
             // 从缓冲区中获取每一个字段，默认已经判断数据可以处理
             // 即canProcessed返回true
@@ -71,7 +71,7 @@ namespace length_value_protocal
             return true;
         }
         // 序列化接口，用于序列化Message类的成员
-        virtual std::string constructProtocal(const base_message::BaseMessage::ptr &msg) override
+        virtual std::string constructProtocol(const base_message::BaseMessage::ptr &msg) override
         {
             // 对每一个字段序列化，需要注意网络字节序的转换，使用htonl
             std::string body_str;

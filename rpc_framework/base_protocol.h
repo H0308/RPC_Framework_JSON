@@ -6,7 +6,7 @@
 #include <rpc_framework/base_message.h>
 #include <rpc_framework/public_data.h>
 
-namespace base_protocal
+namespace base_protocol
 {
     // 抽象协议类
     class BaseProtocol
@@ -16,9 +16,9 @@ namespace base_protocal
         // 判断是否是有效数据
         virtual bool canProcessed(const base_buffer::BaseBuffer::ptr &buf) = 0;
         // 收到消息时的处理，从buffer中读取数据交给Message类处理
-        virtual bool getContentFromProtocal(const base_buffer::BaseBuffer::ptr &buf, base_message::BaseMessage::ptr &msg) = 0;
+        virtual bool getContentFromProtocol(const base_buffer::BaseBuffer::ptr &buf, base_message::BaseMessage::ptr &msg) = 0;
         // 序列化接口，用于序列化Message类的成员
-        virtual std::string constructProtocal(const base_message::BaseMessage::ptr &msg) = 0;
+        virtual std::string constructProtocol(const base_message::BaseMessage::ptr &msg) = 0;
         // 不提供反序列化
     };
 }
