@@ -6,28 +6,14 @@
 #include "public_data.h"
 #include "base_message.h"
 #include "base_buffer.h"
+#include "base_connection.h"
 
 namespace abstracts
 {
     using namespace public_data;
     using namespace base_message;
     using namespace base_buffer;
-
-
-
-
-    // 抽象连接类
-    class BaseConnection
-    {
-    public:
-        using ptr = std::shared_ptr<BaseConnection>;
-        // 发送
-        virtual void send(const BaseMessage::ptr &msg) = 0;
-        // 关闭连接
-        virtual void shutdown() = 0;
-        // 判断连接是否正常
-        virtual bool connected() = 0;
-    };
+    using namespace base_connection;
 
     // 连接回调函数
     using connectionCallback_t = std::function<void(const BaseConnection::ptr &)>;
