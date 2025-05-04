@@ -3,11 +3,18 @@
 
 #include <string>
 #include <cstdint>
+#include <rpc_framework/base_connection.h>
 
 namespace public_data
 {
     // 主机信息类型
     using host_addr_t = std::pair<std::string, uint16_t>;
+    // 连接回调函数
+    using connectionCallback_t = std::function<void(const base_connection::BaseConnection::ptr &)>;
+    // 关闭连接时回调函数
+    using closeCallback_t = std::function<void(const base_connection::BaseConnection::ptr &)>;
+    // 收到消息时回调函数
+    using messageCallback_t = std::function<void(const base_connection::BaseConnection::ptr &, base_message::BaseMessage::ptr &)>;
 
 // 请求和响应中body需要的字段
 #define KEY_METHOD "method"       // 方法名

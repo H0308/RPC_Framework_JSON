@@ -15,39 +15,9 @@ namespace abstracts
     using namespace base_buffer;
     using namespace base_connection;
 
-    // 连接回调函数
-    using connectionCallback_t = std::function<void(const BaseConnection::ptr &)>;
-    // 关闭连接时回调函数
-    using closeCallback_t = std::function<void(const BaseConnection::ptr &)>;
-    // 收到消息时回调函数
-    using messageCallback_t = std::function<void(const BaseConnection::ptr &, BaseMessage::ptr &)>;
+    
 
-    // 服务端抽象
-    class BaseServer
-    {
-    public:
-        using ptr = std::shared_ptr<BaseServer>;
-        virtual void setConnectionCallback(const connectionCallback_t &cb)
-        {
-            _cb_connection = cb;
-        }
-        virtual void setCloseCallback(const closeCallback_t &cb)
-        {
-            _cb_close = cb;
-        }
-        virtual void setMessageCallback(const messageCallback_t &cb)
-        {
-            _cb_message = cb;
-        }
-
-        // 启动服务器
-        virtual void start() = 0;
-
-    protected:
-        connectionCallback_t _cb_connection;
-        closeCallback_t _cb_close;
-        messageCallback_t _cb_message;
-    };
+    
 
     // 客户端抽象
     class BaseClient
