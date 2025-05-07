@@ -6,8 +6,8 @@
 #include <rpc_framework/factories/connection_factory.h>
 #include <rpc_framework/factories/protocol_factory.h>
 #include <rpc_framework/factories/buffer_factory.h>
-#include <muduo_include/muduo/net/EventLoop.h>
-#include <muduo_include/muduo/net/TcpServer.h>
+#include <rpc_framework/muduo_include/muduo/net/EventLoop.h>
+#include <rpc_framework/muduo_include/muduo/net/TcpServer.h>
 
 namespace muduo_server
 {
@@ -15,10 +15,9 @@ namespace muduo_server
     // 基于Muduo库中的TcpServer实现
     class MuduoServer : public base_server::BaseServer
     {
-        const int max_data_size = (1 << 16); // 最大64KB大小的数据
     public:
         using ptr = std::shared_ptr<MuduoServer>;
-        
+
         MuduoServer(uint16_t port)
             : server_(loop_.get(),
                       muduo::net::InetAddress("0.0.0.0", port),
@@ -101,7 +100,7 @@ namespace muduo_server
                 if (!pro_->canProcessed(b_buffer))
                 {
                     // 无法处理时也有可能是数据过大
-                    if (b_buffer->readableSize() >= max_data_size)
+                    if (b_buffer->readableSize() >= public_data::max_data_size)
                     {
                         LOG(Level::Warning, "数据过大，无法处理");
                         break;

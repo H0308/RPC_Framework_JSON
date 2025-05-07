@@ -12,7 +12,7 @@ namespace connection_factory
         template<class ...Args>
         static base_connection::BaseConnection::ptr createConnectionFactory(Args && ...args)
         {
-            return std::shared_ptr<muduo_connection::MuduoConnection>(std::forward(args)...);
+            return std::shared_ptr<muduo_connection::MuduoConnection>(std::forward<Args>(args)...);
         }
     };
 }

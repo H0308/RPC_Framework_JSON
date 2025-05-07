@@ -36,7 +36,7 @@ namespace message_factory
         template<class T, class ...Args>
         static std::shared_ptr<T> messageCreateFactory(Args&& ...args)
         {
-            return std::make_shared<T>(std::forward(args)...);
+            return std::make_shared<T>(std::forward<Args>(args)...);
         }
     };
 }

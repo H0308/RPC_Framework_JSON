@@ -12,7 +12,7 @@ namespace server_factory
         template <class... Args>
         static base_server::BaseServer::ptr serverCreateFactory(Args &&...args)
         {
-            return std::make_shared<muduo_server::MuduoServer>(std::forward(args)...);
+            return std::make_shared<muduo_server::MuduoServer>(std::forward<Args>(args)...);
         }
     };
 }

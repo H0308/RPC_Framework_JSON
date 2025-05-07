@@ -13,7 +13,7 @@ namespace buffer_factory
         template<class ...Args>
         static base_buffer::BaseBuffer::ptr bufferCreateFactory(Args&&... args)
         {
-            return std::make_shared<muduo_buffer::MuduoBuffer>(std::forward(args)...);
+            return std::make_shared<muduo_buffer::MuduoBuffer>(std::forward<Args>(args)...);
         }
     };
 }

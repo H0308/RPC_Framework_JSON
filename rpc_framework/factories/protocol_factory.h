@@ -12,7 +12,7 @@ namespace protocol_factory
         template <class... Args>
         static base_protocol::BaseProtocol::ptr createProtocolFactory(Args &&...args)
         {
-            return std::make_shared<length_value_protocol::LengthValueProtocol>(std::forward(args)...);
+            return std::make_shared<length_value_protocol::LengthValueProtocol>(std::forward<Args>(args)...);
         }
     };
 }

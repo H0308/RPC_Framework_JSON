@@ -15,6 +15,9 @@ namespace public_data
     using closeCallback_t = std::function<void(const base_connection::BaseConnection::ptr &)>;
     // 收到消息时回调函数
     using messageCallback_t = std::function<void(const base_connection::BaseConnection::ptr &, base_message::BaseMessage::ptr &)>;
+    
+    // 最大64KB大小的数据
+    const int max_data_size = (1 << 16);
 
 // 请求和响应中body需要的字段
 #define KEY_METHOD "method"       // 方法名
