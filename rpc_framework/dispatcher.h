@@ -22,7 +22,7 @@ namespace dispatcher_rpc_framework
         using ptr = std::shared_ptr<Dispatcher>;
 
         // 注册服务
-        void registerService(public_data::MType& m, const public_data::messageCallback_t& cb)
+        void registerService(const public_data::MType& m, const public_data::messageCallback_t& cb)
         {  
             std::unique_lock<std::mutex> lock(mtx_);
             auto pos = type_calls.find(m);
@@ -39,8 +39,9 @@ namespace dispatcher_rpc_framework
         {
             std::unique_lock<std::mutex> lock(mtx_);
             auto pos = type_calls.find(msg->getMtype());
-            if (pos != type_calls.end())
+            if (pos == type_calls.end())
             {
+                LOG(Level::Debug, "错误的消息类型为：{}", static_cast<int>(msg->getMtype()));
                 LOG(Level::Warning, "不存在指定的消息类型，分发失败");
                 con->shutdown();
                 return;
