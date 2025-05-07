@@ -10,8 +10,8 @@ namespace buffer_factory
     class BufferFactory
     {
     public:
-        template<class T, class ...Args>
-        static base_buffer::BaseBuffer bufferCreateFactory(Args&&... args)
+        template<class ...Args>
+        static base_buffer::BaseBuffer::ptr bufferCreateFactory(Args&&... args)
         {
             return std::make_shared<muduo_buffer::MuduoBuffer>(std::forward(args)...);
         }

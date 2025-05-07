@@ -26,15 +26,15 @@ namespace abstracts
         using ptr = std::shared_ptr<BaseClient>;
         virtual void setConnectionCallback(const connectionCallback_t &cb)
         {
-            _cb_connection = cb;
+            cb_connection_ = cb;
         }
         virtual void setCloseCallback(const closeCallback_t &cb)
         {
-            _cb_close = cb;
+            cb_close_ = cb;
         }
         virtual void setMessageCallback(const messageCallback_t &cb)
         {
-            _cb_message = cb;
+            cb_message_ = cb;
         }
 
         // 连接服务端
@@ -49,9 +49,9 @@ namespace abstracts
         virtual bool connected() = 0;
 
     protected:
-        connectionCallback_t _cb_connection;
-        closeCallback_t _cb_close;
-        messageCallback_t _cb_message;
+        connectionCallback_t cb_connection_;
+        closeCallback_t cb_close_;
+        messageCallback_t cb_message_;
     };
 }
 

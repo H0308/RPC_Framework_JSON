@@ -13,24 +13,24 @@ namespace base_server
         using ptr = std::shared_ptr<BaseServer>;
         virtual void setConnectionCallback(const public_data::connectionCallback_t &cb)
         {
-            _cb_connection = cb;
+            cb_connection_ = cb;
         }
         virtual void setCloseCallback(const public_data::closeCallback_t &cb)
         {
-            _cb_close = cb;
+            cb_close_ = cb;
         }
         virtual void setMessageCallback(const public_data::messageCallback_t &cb)
         {
-            _cb_message = cb;
+            cb_message_ = cb;
         }
 
         // 启动服务器
         virtual void start() = 0;
 
     protected:
-        public_data::connectionCallback_t _cb_connection;
-        public_data::closeCallback_t _cb_close;
-        public_data::messageCallback_t _cb_message;
+        public_data::connectionCallback_t cb_connection_;
+        public_data::closeCallback_t cb_close_;
+        public_data::messageCallback_t cb_message_;
     };
 }
 

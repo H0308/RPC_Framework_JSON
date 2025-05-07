@@ -1,7 +1,7 @@
 #ifndef __rpc_length_value_protocal_h__
 #define __rpc_length_value_protocal_h__
 
-#include <rpc_framework/utils/message_factory.h>
+#include <rpc_framework/factories/message_factory.h>
 #include <rpc_framework/base_protocol.h>
 #include <rpc_framework/log.h>
 #include <arpa/inet.h>
