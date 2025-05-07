@@ -19,9 +19,9 @@ namespace muduo_client
     public:
         using ptr = std::shared_ptr<MuduoClient>;
         MuduoClient(const std::string &ip, uint16_t port)
-            : loopThread_(std::make_shared<muduo::net::EventLoopThread>()), loop_(loopThread_->startLoop()), client_(loop_.get(), muduo::net::InetAddress(ip, port), "MuduoClient"),
-            pro_(protocol_factory::ProtocolFactory::createProtocolFactory()),
-            count_(1) // 确保客户端在连接建立成功后发送消息
+            : loop_(loopThread_.startLoop()), client_(loop_, muduo::net::InetAddress(ip, port), "MuduoClient"),
+              pro_(protocol_factory::ProtocolFactory::createProtocolFactory()),
+              count_(1) // 确保客户端在连接建立成功后发送消息
         {
             // 设置回调函数
             // 1. 连接回调
@@ -56,6 +56,8 @@ namespace muduo_client
             }
 
             con_->send(msg);
+
+            return true;
         }
 
         // 获取连接对象
@@ -130,8 +132,8 @@ namespace muduo_client
         }
 
     private:
-        std::shared_ptr<muduo::net::EventLoopThread> loopThread_;
-        std::shared_ptr<muduo::net::EventLoop> loop_;
+        muduo::net::EventLoopThread loopThread_;
+        muduo::net::EventLoop* loop_; // 不能使用智能指针管理EventLoop对象
         muduo::net::TcpClient client_;
         base_connection::BaseConnection::ptr con_;
         muduo::CountDownLatch count_;

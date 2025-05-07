@@ -2,7 +2,7 @@
 #define __rpc_muduo_buffer_h__
 
 #include <rpc_framework/base_buffer.h>
-#include <muduo_include/muduo/net/Buffer.h>
+#include <rpc_framework/muduo_include/muduo/net/Buffer.h>
 
 namespace muduo_buffer
 {
@@ -10,15 +10,16 @@ namespace muduo_buffer
     // 方法实现底层全部调用Muduo中Buffer类中的方法
     class MuduoBuffer : public base_buffer::BaseBuffer
     {
+        const int valid_length_field_length = 4;
+
     public:
         MuduoBuffer(muduo::net::Buffer *buf)
             : buffer_(buf)
         {
-
         }
         using ptr = std::shared_ptr<MuduoBuffer>;
         // 可读数据大小
-        virtual size_t readableSize() override 
+        virtual size_t readableSize() override
         {
             return buffer_->readableBytes();
         }

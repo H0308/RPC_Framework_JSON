@@ -2,12 +2,15 @@
 #define __rpc_base_message_h__
 
 #include <memory>
-#include <rpc_framework/public_data.h>
+#include <string>
+
+namespace public_data
+{
+    enum class MType;
+}
 
 namespace base_message
 {
-    using namespace public_data;
-
     // 消息抽象
     // 主要是包括了应用层协议中的请求/响应ID和消息类型
     // 该类作为JsonMessage类的基类
@@ -30,12 +33,12 @@ namespace base_message
             return req_resp_id_;
         }
         // 设置消息类型
-        virtual void setMType(MType mtype)
+        virtual void setMType(public_data::MType mtype)
         {
             mtype_ = mtype;
         }
         // 获取消息类型
-        virtual MType getMtype()
+        virtual public_data::MType getMtype()
         {
             return mtype_;
         }
@@ -47,7 +50,7 @@ namespace base_message
         virtual bool check() = 0;
 
     protected:
-        MType mtype_;
+        public_data::MType mtype_;
         std::string req_resp_id_;
     };
 }

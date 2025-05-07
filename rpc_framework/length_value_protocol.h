@@ -21,10 +21,14 @@ namespace length_value_protocol
         // 判断有效数据长度+有效数据长度字段的长度是否等于或者小于收到的总长度
         virtual bool canProcessed(const base_buffer::BaseBuffer::ptr &buf) override
         {
+            if (buf->readableSize() < valid_length_field_length)
+                return false;
+            // debug
+            // LOG(Level::Debug, "获取到的总长度：{}", buf->readableSize() - valid_length_field_length);
             // 尝试从获取到缓冲区前4个字节
             int32_t valid_length = buf->peekInt32();
             // 计算预期总长度
-            int32_t expect_length = valid_length + sizeof(valid_length);
+            int32_t expect_length = valid_length + valid_length_field_length;
             // 获取实际大小
             int32_t real_length = buf->readableSize();
 
@@ -46,7 +50,7 @@ namespace length_value_protocol
             int32_t id_length = buf->readInt32();
             std::string id = buf->retrieveAsString(id_length);
             // 正文部分，总长度-有效数据长度字段的长度-消息类型字段的长度-ID字段的长度-ID的长度
-            std::string body = buf->retrieveAsString(buf->readableSize() - valid_length_field_length - sizeof(mtype) - sizeof(id_length) - id.size());
+            std::string body = buf->retrieveAsString(valid_length - sizeof(mtype) - sizeof(id_length) - id.size());
 
             // 创建消息对象
             // 根据消息类型创建对象
@@ -84,19 +88,24 @@ namespace length_value_protocol
             std::string id = msg->getReqRespId();
             auto mtype = htonl(static_cast<int32_t>(msg->getMtype()));
             int32_t id_len = htonl(id.size());
-            int32_t h_total_len = sizeof(mtype) + id_len + id.size() + body_str.size();
+            int32_t h_total_len = sizeof(mtype) + sizeof(id_len) + id.size() + body_str.size();
             // 对总长度进行网络字节序转换
             int32_t n_total_len = htonl(h_total_len);
-            
+
+            // debug
+            LOG(Level::Debug, "总长度：{}", h_total_len);
+
             std::string result;
-            result.reserve(h_total_len); // 提前开辟空间，提高性能
+            result.reserve(sizeof(n_total_len) + h_total_len); // 提前开辟空间，提高性能
 
             // 构建应用层协议
-            result += (std::to_string(h_total_len) + 
-                    std::to_string(sizeof(mtype)) + 
-                    std::to_string(id_len) + 
-                    id + body_str);
-            
+            // 使用二进制方式添加字段，而不是转换为字符，不能使用to_string
+            result.append(reinterpret_cast<const char *>(&n_total_len), sizeof(n_total_len));
+            result.append(reinterpret_cast<const char *>(&mtype), sizeof(mtype));
+            result.append(reinterpret_cast<const char *>(&id_len), sizeof(id_len));
+            result.append(id);
+            result.append(body_str);
+
             return result;
         }
     };
