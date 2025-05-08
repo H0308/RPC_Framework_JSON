@@ -9,7 +9,7 @@ using namespace muduo_client;
 using namespace log_system;
 
 // 客户端收到rpc响应时
-void messageCallback_rpc(const base_connection::BaseConnection::ptr &con, base_message::BaseMessage::ptr &msg)
+void messageCallback_rpc(const base_connection::BaseConnection::ptr &con, response_message::RpcResponse::ptr &msg)
 {
     std::string out_str;
     // 序列化得到结果打印
@@ -23,7 +23,7 @@ void messageCallback_rpc(const base_connection::BaseConnection::ptr &con, base_m
 }
 
 // 客户端收到topic响应时
-void messageCallback_topic(const base_connection::BaseConnection::ptr &con, base_message::BaseMessage::ptr &msg)
+void messageCallback_topic(const base_connection::BaseConnection::ptr &con, response_message::TopicResponse::ptr &msg)
 {
     std::string out_str;
     // 序列化得到结果打印
@@ -42,9 +42,9 @@ int main()
     std::shared_ptr<base_client::BaseClient> mc = client_factory::ClientFactory::clientCreateFactory("127.0.0.1", 8080);
     // 设置消息类型对应的回调函数
     // 针对rpc响应处理
-    dp->registerService(public_data::MType::Resp_rpc, messageCallback_rpc);
+    dp->registerService<response_message::RpcResponse>(public_data::MType::Resp_rpc, messageCallback_rpc);
     // 针对主题响应处理
-    dp->registerService(public_data::MType::Resp_topic, messageCallback_topic);
+    dp->registerService<response_message::TopicResponse>(public_data::MType::Resp_topic, messageCallback_topic);
     
     mc->setMessageCallback(std::bind(&dispatcher_rpc_framework::Dispatcher::executeService, dp.get(), std::placeholders::_1, std::placeholders::_2));
     mc->connect();

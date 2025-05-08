@@ -9,7 +9,7 @@
 using namespace muduo_server;
 using namespace log_system;
 
-void messageCallback_rpc(const base_connection::BaseConnection::ptr &con, base_message::BaseMessage::ptr &msg)
+void messageCallback_rpc(const base_connection::BaseConnection::ptr &con, request_message::RpcRequest::ptr &msg)
 {
     // 得到序列化结果便于查看
     std::string out_str;
@@ -32,7 +32,7 @@ void messageCallback_rpc(const base_connection::BaseConnection::ptr &con, base_m
     LOG(Level::Info, "序列化结果：\n{}", out_str);
 }
 
-void messageCallback_topic(const base_connection::BaseConnection::ptr &con, base_message::BaseMessage::ptr &msg)
+void messageCallback_topic(const base_connection::BaseConnection::ptr &con, request_message::TopicRequest::ptr &msg)
 {
     // 得到序列化结果便于查看
     std::string out_str;
@@ -59,8 +59,8 @@ int main()
     std::shared_ptr<dispatcher_rpc_framework::Dispatcher> dp = std::make_shared<dispatcher_rpc_framework::Dispatcher>();
     std::shared_ptr<base_server::BaseServer> ms = server_factory::ServerFactory::serverCreateFactory(8080);
     
-    dp->registerService(public_data::MType::Req_rpc, messageCallback_rpc);
-    dp->registerService(public_data::MType::Req_topic, messageCallback_topic);
+    dp->registerService<request_message::RpcRequest>(public_data::MType::Req_rpc, messageCallback_rpc);
+    dp->registerService<request_message::TopicRequest>(public_data::MType::Req_topic, messageCallback_topic);
 
     ms->setMessageCallback(std::bind(&dispatcher_rpc_framework::Dispatcher::executeService, dp.get(), std::placeholders::_1, std::placeholders::_2));
     ms->start();
