@@ -4,7 +4,7 @@
 #include <iostream>
 #include <string>
 #include "jsoncpp/json/json.h"
-#include <rpc_framework/log.h>
+#include <rpc_framework/base/log.h>
 
 namespace json_util
 {

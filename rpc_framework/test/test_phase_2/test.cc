@@ -1,5 +1,5 @@
-#include <rpc_framework/request_message.h>
-#include <rpc_framework/response_message.h>
+#include <rpc_framework/base/request_message.h>
+#include <rpc_framework/base/response_message.h>
 #include <rpc_framework/factories/message_factory.h>
 
 using namespace log_system;

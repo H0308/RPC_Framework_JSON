@@ -1,8 +1,8 @@
-#ifndef __rpc__server_factory_h__
-#define __rpc__server_factory_h__
+#ifndef __rpc_server_factory_h__
+#define __rpc_server_factory_h__
 
-#include <rpc_framework/base_server.h>
-#include <rpc_framework/muduo_server.h>
+#include <rpc_framework/base/base_server.h>
+#include <rpc_framework/base/muduo_server.h>
 
 namespace server_factory
 {

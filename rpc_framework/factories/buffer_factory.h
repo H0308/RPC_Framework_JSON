@@ -1,8 +1,8 @@
 #ifndef __rpc__buffer_factory_h__
 #define __rpc__buffer_factory_h__
 
-#include <rpc_framework/base_buffer.h>
-#include <rpc_framework/muduo_buffer.h>
+#include <rpc_framework/base/base_buffer.h>
+#include <rpc_framework/base/muduo_buffer.h>
 
 namespace buffer_factory
 {

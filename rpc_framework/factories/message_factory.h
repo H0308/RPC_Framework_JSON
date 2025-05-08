@@ -1,9 +1,9 @@
 #ifndef __rpc_message_factory_h__
 #define __rpc_message_factory_h__
 
-#include <rpc_framework/base_message.h>
-#include <rpc_framework/request_message.h>
-#include <rpc_framework/response_message.h>
+#include <rpc_framework/base/base_message.h>
+#include <rpc_framework/base/request_message.h>
+#include <rpc_framework/base/response_message.h>
 
 namespace message_factory
 {

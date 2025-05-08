@@ -1,8 +1,8 @@
 #ifndef __rpc_client_factory_h__
 #define __rpc_client_factory_h__
 
-#include <rpc_framework/base_client.h>
-#include <rpc_framework/muduo_client.h>
+#include <rpc_framework/base/base_client.h>
+#include <rpc_framework/base/muduo_client.h>
 
 namespace client_factory
 {

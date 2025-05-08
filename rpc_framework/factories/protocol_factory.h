@@ -1,8 +1,8 @@
 #ifndef __rpc_protocal_factory_h__
 #define __rpc_protocal_factory_h__
 
-#include <rpc_framework/base_protocol.h>
-#include <rpc_framework/length_value_protocol.h>
+#include <rpc_framework/base/base_protocol.h>
+#include <rpc_framework/base/length_value_protocol.h>
 
 namespace protocol_factory
 {
