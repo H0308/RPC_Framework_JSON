@@ -95,9 +95,8 @@ namespace public_data
     // 消息发送模式
     enum class RType
     {
-        Req_sync = 0, // 同步模式
-        Req_async,    // 异步模式
-        Req_callback  // 回调模式
+        Req_async = 0, // 异步模式
+        Req_callback   // 回调模式
     };
 
     enum class TopicOptype
