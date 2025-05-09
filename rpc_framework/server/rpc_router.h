@@ -147,7 +147,7 @@ namespace rpc_server
 
             ServiceDesc::ptr buildServiceDesc()
             {
-                return std::make_shared<ServiceDesc>(method_name_, handler_, params_, return_type_);
+                return std::make_shared<ServiceDesc>(std::move(method_name_), std::move(handler_), std::move(params_), std::move(return_type_));
             }
         private:
             std::string method_name_;                 // 方法名
