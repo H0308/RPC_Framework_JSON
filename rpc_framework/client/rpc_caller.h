@@ -83,7 +83,7 @@ namespace rpc_client
             }
 
             // 回调方式调用函数
-            bool call(const base_connection::BaseConnection::ptr &con, const std::string &method_name, const Json::Value &params, callback_t &cb)
+            bool call(const base_connection::BaseConnection::ptr &con, const std::string &method_name, const Json::Value &params, const callback_t &cb)
             {
                 // 1. 创建请求
                 auto rpc_req = message_factory::MessageFactory::messageCreateFactory<request_message::RpcRequest>();

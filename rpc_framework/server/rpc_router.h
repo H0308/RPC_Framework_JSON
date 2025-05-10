@@ -34,7 +34,8 @@ namespace rpc_server
         public:
             using ptr = std::shared_ptr<ServiceDesc>;
 
-            ServiceDesc(const std::string &&method, const handler_t &&handler, const std::vector<params_desciption_t> &&params, const params_type &&return_type)
+            // 右值不能带const
+            ServiceDesc(std::string &&method, handler_t &&handler, std::vector<params_desciption_t> &&params, params_type &&return_type)
                 : method_name_(std::move(method)), handler_(std::move(handler)), params_(params), return_type_(std::move(return_type))
             {
             }
@@ -53,9 +54,12 @@ namespace rpc_server
                     }
 
                     // 判断字段类型和给定类型是否一致
-                    if (!checkParamsType(desc.second, params))
+                    // 注意需要判断的是指定的字段而不是直接params对象
+                    if (!checkParamsType(desc.second, params[desc.first]))
                     {
-                        LOG(Level::Warning, "指定的类型错误：{}", desc.second);
+                        // debug
+                        // LOG(Level::Debug, "当前类型为：{}", params.asInt());
+                        LOG(Level::Warning, "指定的类型错误：{}", static_cast<int>(desc.second));
                         return false;
                     }
                 }
@@ -69,7 +73,7 @@ namespace rpc_server
                 handler_(input, output);
                 if (!checkReturnType(return_type_, output))
                 {
-                    LOG(Level::Warning, "返回值的类型错误：{}", return_type_);
+                    LOG(Level::Warning, "返回值的类型错误：{}", static_cast<int>(return_type_));
                     return false;
                 }
 
@@ -135,9 +139,9 @@ namespace rpc_server
                 handler_ = handler;
             }
 
-            void setParams(const std::vector<params_desciption_t>& params)
+            void setParams(const std::string &param, params_type pt)
             {
-                params_ = params;
+                params_.emplace_back(param, pt);
             }
 
             void setReturnType(const params_type& type)
@@ -198,6 +202,13 @@ namespace rpc_server
         {
         public:
             using ptr = std::shared_ptr<RpcRouter>;
+
+            RpcRouter()
+                :services_(std::make_shared<ServiceManager>())
+            {
+
+            }
+
             // 提供给Dispatcher模块的注册回调
             void onRpcRequest(const base_connection::BaseConnection::ptr &con, request_message::RpcRequest::ptr &msg)
             {
