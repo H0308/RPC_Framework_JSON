@@ -55,7 +55,7 @@ namespace rpc_client
             }
 
             // 同步发送接口
-            bool sendRequest(const base_connection::BaseConnection::ptr &con, base_message::BaseMessage::ptr &msg,  base_message::BaseMessage::ptr &resp)
+            bool sendRequest(const base_connection::BaseConnection::ptr &con, const base_message::BaseMessage::ptr &msg,  base_message::BaseMessage::ptr &resp)
             {
                 // 创建出请求描述
                 async_response resp_async;
@@ -73,7 +73,7 @@ namespace rpc_client
             }
 
             // 异步发送接口
-            bool sendRequest(const base_connection::BaseConnection::ptr &con, base_message::BaseMessage::ptr &msg, async_response &resp)
+            bool sendRequest(const base_connection::BaseConnection::ptr &con, const base_message::BaseMessage::ptr &msg, async_response &resp)
             {
                 // 创建出请求描述
                 RequestDesc::ptr rd = insertRequestDesc(msg, msg->getReqRespId(), public_data::RType::Req_async);
@@ -93,7 +93,7 @@ namespace rpc_client
             }
 
             // 回调发送接口
-            bool sendRequest(const base_connection::BaseConnection::ptr &con, base_message::BaseMessage::ptr &msg, callback_t &cb)
+            bool sendRequest(const base_connection::BaseConnection::ptr &con, const base_message::BaseMessage::ptr &msg, callback_t &cb)
             {
                 // 创建出请求描述
                 RequestDesc::ptr rd = insertRequestDesc(msg, msg->getReqRespId(), public_data::RType::Req_callback, cb);
@@ -110,7 +110,7 @@ namespace rpc_client
             }
         private:
             // 添加请求描述
-            RequestDesc::ptr insertRequestDesc(base_message::BaseMessage::ptr &req, std::string rid, public_data::RType rtype, const callback_t &cb = nullptr)
+            RequestDesc::ptr insertRequestDesc(const base_message::BaseMessage::ptr &req, std::string rid, public_data::RType rtype, const callback_t &cb = nullptr)
             {
                 std::unique_lock<std::mutex> lock(manage_map_mtx_);
                 // 构建RequestDesc对象
