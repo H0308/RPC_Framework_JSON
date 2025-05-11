@@ -1,5 +1,5 @@
-#ifndef __rpc_rpc_registry_h__
-#define __rpc_rpc_registry_h__
+#ifndef __rpc_rpc_registry_server_h__
+#define __rpc_rpc_registry_server_h__
 
 #include <set>
 #include <vector>
