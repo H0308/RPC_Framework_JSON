@@ -65,6 +65,7 @@
         "stop_token": "cpp",
         "thread": "cpp",
         "*.tcc": "cpp",
-        "future": "cpp"
+        "future": "cpp",
+        "set": "cpp"
     }
 }
