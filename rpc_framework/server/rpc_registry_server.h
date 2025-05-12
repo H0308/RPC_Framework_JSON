@@ -260,7 +260,7 @@ namespace rpc_server
             }
 
             // 处理服务请求
-            void handleServiceRequest(const base_connection::BaseConnection::ptr &con, const request_message::ServiceRequest::ptr &msg)
+            void handleRegisterDiscoverRequest (const base_connection::BaseConnection::ptr &con, const request_message::ServiceRequest::ptr &msg)
             {
                 // 收到服务请求只有两种情况：服务发现和服务注册
                 // 对于服务上线和下线通知是当前服务端发送给客户端，需要由客户端进行处理的
@@ -291,7 +291,7 @@ namespace rpc_server
             }
 
             // 处理连接断开时
-            void handleConnectionShutdown(const base_connection::BaseConnection::ptr &con)
+            void handleProviderConnectionShutdown(const base_connection::BaseConnection::ptr &con)
             {
                 // 通知所有发现者
                 auto sp = provider_manager_->findProvider(con);
