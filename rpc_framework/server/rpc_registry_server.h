@@ -113,6 +113,23 @@ namespace rpc_server
                 con_provider_.erase(con);
             }
 
+            std::vector<public_data::host_addr_t> getServiceProviders(const std::string &method)
+            {
+                std::unique_lock<std::mutex> lock(provider_mtx_);
+                auto pos = providers_.find(method);
+                if (pos == providers_.end())
+                {
+                    LOG(Level::Warning, "不存在指定服务的提供者");
+                    return std::vector<public_data::host_addr_t>();
+                }
+
+                std::vector<public_data::host_addr_t> hosts;
+                for (auto &p : pos->second)
+                    hosts.push_back(p->host_);
+
+                return hosts;
+            }
+
         private:
             std::mutex provider_mtx_;                                                                     // 用于提供者管理的线程安全
             std::unordered_map<std::string, std::set<ServiceProvider::ptr>> providers_;                   // 指定服务的所有提供者，使用set方便删除
@@ -223,7 +240,7 @@ namespace rpc_server
                 service_msg->setHost(addr);
                 service_msg->setServiceOptype(op);
 
-                for(auto &d : pos->second)
+                for (auto &d : pos->second)
                     d->con_->send(service_msg);
             }
 
@@ -237,9 +254,10 @@ namespace rpc_server
         {
         public:
             ProviderDiscovererManager()
-                :provider_manager_(std::make_shared<ServiceProviderManager>()),
-                discoverer_manager_(std::make_shared<ServiceDiscovererManager>())
-            {}
+                : provider_manager_(std::make_shared<ServiceProviderManager>()),
+                  discoverer_manager_(std::make_shared<ServiceDiscovererManager>())
+            {
+            }
 
             // 处理服务请求
             void handleServiceRequest(const base_connection::BaseConnection::ptr &con, const request_message::ServiceRequest::ptr &msg)
@@ -248,22 +266,27 @@ namespace rpc_server
                 // 对于服务上线和下线通知是当前服务端发送给客户端，需要由客户端进行处理的
                 // 获取操作类型
                 public_data::ServiceOptype type = msg->getServiceOptye();
-                if(type == public_data::ServiceOptype::Service_register)
+                if (type == public_data::ServiceOptype::Service_register)
                 {
                     // 服务注册
                     // 添加服务提供者到ProviderManager中
                     provider_manager_->insertProvider(con, msg->getMethod(), msg->getHost());
                     // 通知发现者
                     discoverer_manager_->onlineNotify(msg->getMethod(), msg->getHost());
+
+                    sendRegistryResponse(con, msg);
                 }
-                else if(type == public_data::ServiceOptype::Service_discover)
+                else if (type == public_data::ServiceOptype::Service_discover)
                 {
                     // 服务发现
                     discoverer_manager_->insertDiscoverer(con, msg->getMethod());
+
+                    sendDiscoverResponse(con, msg);
                 }
                 else
                 {
                     LOG(Level::Error, "收到服务请求，但是服务类型错误");
+                    handleErrorResponse(con, msg);
                 }
             }
 
@@ -272,19 +295,74 @@ namespace rpc_server
             {
                 // 通知所有发现者
                 auto sp = provider_manager_->findProvider(con);
-                if(!sp)
+                if (!sp)
                 {
                     LOG(Level::Warning, "不存在指定的服务提供者");
                     return;
                 }
-                for(auto &m : sp->methods_)
+                for (auto &m : sp->methods_)
                     discoverer_manager_->offlineNotify(m, sp->host_);
 
-                // 移除服务提供者   
+                // 移除服务提供者
                 provider_manager_->removeProvider(con);
 
                 // 如果是服务发现者，移除
                 discoverer_manager_->removeDiscoverer(con);
+            }
+
+        private:
+            void handleErrorResponse(const base_connection::BaseConnection::ptr &con, const request_message::ServiceRequest::ptr &msg)
+            {
+                auto service_resp = message_factory::MessageFactory::messageCreateFactory<response_message::ServiceResponse>();
+
+                service_resp->setId(msg->getReqRespId());
+                // 设置方法和主机信息
+                service_resp->setMType(public_data::MType::Resp_service);
+                service_resp->setServiceOptye(public_data::ServiceOptype::Service_unknown);
+                service_resp->setRCode(public_data::RCode::RCode_not_found_service);
+
+                con->send(service_resp);
+            }
+
+            void sendDiscoverResponse(const base_connection::BaseConnection::ptr &con, const request_message::ServiceRequest::ptr &msg)
+            {
+                // 构建响应
+                auto service_resp = message_factory::MessageFactory::messageCreateFactory<response_message::ServiceResponse>();
+                // 获取主机信息
+                auto hosts = provider_manager_->getServiceProviders(msg->getMethod());
+                service_resp->setId(msg->getReqRespId());
+                // 设置方法和主机信息
+                service_resp->setMethod(msg->getMethod());
+                service_resp->setMType(public_data::MType::Resp_service);
+                service_resp->setServiceOptye(public_data::ServiceOptype::Service_discover);
+                if (hosts.empty())
+                {
+                    LOG(Level::Warning, "不存在主机信息");
+                    // 构建错误响应
+                    service_resp->setRCode(public_data::RCode::RCode_not_found_service);
+                    con->send(service_resp);
+                    return;
+                }
+
+                service_resp->setRCode(public_data::RCode::RCode_fine);
+                service_resp->setHosts(hosts);
+
+                con->send(service_resp);
+            }
+
+            void sendRegistryResponse(const base_connection::BaseConnection::ptr &con, const request_message::ServiceRequest::ptr &msg)
+            {
+                // 构建响应
+                auto service_resp = message_factory::MessageFactory::messageCreateFactory<response_message::ServiceResponse>();
+                // 获取主机信息
+                service_resp->setId(msg->getReqRespId());
+                // 设置方法和主机信息
+                service_resp->setMType(public_data::MType::Resp_service);
+                service_resp->setServiceOptye(public_data::ServiceOptype::Service_register);
+
+                service_resp->setRCode(public_data::RCode::RCode_fine);
+
+                con->send(service_resp);
             }
 
         private:

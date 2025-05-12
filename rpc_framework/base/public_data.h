@@ -114,7 +114,8 @@ namespace public_data
         Service_discover,     // 服务发现
         Service_online,       // 服务上线
         Service_offline,      // 服务下线
-        Service_wrong_type    // 错误服务类型
+        Service_wrong_type,   // 错误服务类型
+        Service_unknown       // 不存在的服务类型
     };
 }
 
