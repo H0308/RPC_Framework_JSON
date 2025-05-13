@@ -14,6 +14,8 @@ namespace rpc_client
         class Provider
         {
         public:
+            using ptr = std::shared_ptr<Provider>;
+
             Provider(const rpc_client::requestor_rpc_framework::Requestor::ptr &requestor)
                 : requestor_(requestor)
             {
@@ -114,6 +116,8 @@ namespace rpc_client
         class Discoverer
         {
         public:
+            using ptr = std::shared_ptr<Discoverer>;
+
             Discoverer(const requestor_rpc_framework::Requestor::ptr &requestor)
                 : requestor_(requestor)
             {
