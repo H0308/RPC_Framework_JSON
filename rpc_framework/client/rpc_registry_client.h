@@ -126,6 +126,7 @@ namespace rpc_client
                 // 只针对服务上线和下线的请求进行处理，不对其他服务类型的请求处理
                 // 获取请求类型
                 auto type = msg->getServiceOptye();
+                auto method = msg->getMethod();
                 if(type == public_data::ServiceOptype::Service_online)
                 {
                     // 1. 服务上线请求处理
@@ -133,24 +134,88 @@ namespace rpc_client
                     // 如果存在直接向其中添加
                     // 不存在则说明则构造一个该服务对应的MethodHost
                     // 再添加到哈希表中
-                    auto method = msg->getMethod();
                     auto pos = service_providers_.find(method);
-                    // 不存在指定服务
                     if (pos == service_providers_.end())
                     {
+                        // 不存在指定服务
                         auto host = std::make_shared<MethodHost>();
                         host->insertHost(msg->getHost());
+                        service_providers_[method] = host;
+                    }
+                    else
+                    {
+                        // 存在直接添加
+                        auto method_hosts = pos->second;
+                        method_hosts->insertHost(msg->getHost());
                     }
                 }
                 else if(type == public_data::ServiceOptype::Service_offline)
                 {
-
+                    // 2. 服务下线请求处理
+                    // 将对应服务的主机从管理主机信息的结构中移除
+                    auto pos = service_providers_.find(method);
+                    if(pos == service_providers_.end())
+                    {
+                        LOG(Level::Warning, "不存在指定的服务");
+                        return; 
+                    }
+                    auto method_hosts = pos->second;
+                    auto host = msg->getHost();
+                    method_hosts->removeHost(host);
                 }
             }
 
-            // 发起服务发现请求
-            void sendDiscoveryRequest(const base_connection::BaseConnection::ptr &con, const std::string &method, public_data::host_addr_t &host)
+            // 处理服务发现请求
+            bool handleDiscoveryRequest(const base_connection::BaseConnection::ptr &con, const std::string &method, public_data::host_addr_t &host)
             {
+                {
+                    std::unique_lock<std::mutex> lock(manage_mtx_);
+                    // 判断是否存在指定的方法，如果存在，就直接插入到该方法对应的主机信息管理结构中
+                    auto pos = service_providers_.find(method);
+                    if (pos != service_providers_.end())
+                    {
+                        // 判断主机信息管理结构是否为空
+                        // 如果不为空，说明可以选择一个主机信息进行返回
+                        auto method_host = pos->second;
+                        if (!method_host->emptyHosts())
+                            host = method_host->choostHost();
+                    }
+                }
+
+                // 如果不存在指定的方法，那么肯定不存在对应的MethodHost结构
+                // 此时就需要向服务端发起服务发现的请求
+                auto service_req = message_factory::MessageFactory::messageCreateFactory<request_message::ServiceRequest>();
+                service_req->setId(uuid_generator::UuidGenerator::generate_uuid());
+                service_req->setMethod(method);
+                service_req->setMType(public_data::MType::Req_service);
+                service_req->setServiceOptype(public_data::ServiceOptype::Service_discover);
+
+                base_message::BaseMessage::ptr msg_resp;
+                requestor_->sendRequest(con, service_req, msg_resp);
+
+                auto service_resp = std::dynamic_pointer_cast<response_message::ServiceResponse>(msg_resp);
+                if(!service_resp)
+                {
+                    LOG(Level::Warning, "向下转型失败");
+                    return false;
+                }
+
+                if(service_resp->getRCode() != public_data::RCode::RCode_fine)
+                {
+                    LOG(Level::Warning, "服务：{}发现错误：{}", method, public_data::errReason(service_resp->getRCode()));
+                    return false;
+                }
+
+                std::unique_lock<std::mutex> lock(manage_mtx_);
+                // 此时说明一定存在服务了
+                // 构建MethodHost对象
+                auto methodHost = std::make_shared<MethodHost>(service_resp->getHosts());
+                // 获取一个host返回
+                host = methodHost->choostHost();
+                // 插入到映射表
+                service_providers_[method] = methodHost;
+
+                return true;
             }
 
         private:
