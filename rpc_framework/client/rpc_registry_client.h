@@ -62,7 +62,7 @@ namespace rpc_client
         public:
             using ptr = std::shared_ptr<MethodHost>;
 
-            MethodHost(const std::vector<public_data::host_addr_t> &hosts)
+            MethodHost(const std::vector<public_data::host_addr_t> &hosts = std::vector<public_data::host_addr_t>())
                 : hosts_(hosts), index_(0)
             {
             }
@@ -101,6 +101,7 @@ namespace rpc_client
 
             bool emptyHosts()
             {
+                std::unique_lock<std::mutex> lock(manage_mtx_);
                 return hosts_.empty();
             }
 
@@ -121,6 +122,30 @@ namespace rpc_client
             // 针对服务端发送的服务上线/下线请求处理
             void handleOnlineOfflineServiceRequest(const base_connection::BaseConnection::ptr &con, const request_message::ServiceRequest::ptr &msg)
             {
+                std::unique_lock<std::mutex> lock(manage_mtx_);
+                // 只针对服务上线和下线的请求进行处理，不对其他服务类型的请求处理
+                // 获取请求类型
+                auto type = msg->getServiceOptye();
+                if(type == public_data::ServiceOptype::Service_online)
+                {
+                    // 1. 服务上线请求处理
+                    // 处理思路：查找是否存在指定服务的MethodHost对象
+                    // 如果存在直接向其中添加
+                    // 不存在则说明则构造一个该服务对应的MethodHost
+                    // 再添加到哈希表中
+                    auto method = msg->getMethod();
+                    auto pos = service_providers_.find(method);
+                    // 不存在指定服务
+                    if (pos == service_providers_.end())
+                    {
+                        auto host = std::make_shared<MethodHost>();
+                        host->insertHost(msg->getHost());
+                    }
+                }
+                else if(type == public_data::ServiceOptype::Service_offline)
+                {
+
+                }
             }
 
             // 发起服务发现请求
