@@ -6,6 +6,7 @@
 #include <rpc_framework/client/rpc_caller.h>
 #include <rpc_framework/base/dispatcher.h>
 #include <rpc_framework/base/base_client.h>
+#include <rpc_framework/factories/client_factory.h>
 
 namespace rpc_client
 {
@@ -16,14 +17,28 @@ namespace rpc_client
         {
         public:
             using ptr = std::shared_ptr<RegisterClient>;
+            RegisterClient(const std::string &ip, const uint16_t port)
+                : requestor_(std::make_shared<requestor_rpc_framework::Requestor>()), provider_(std::make_shared<rpc_client::rpc_registry::Provider>(requestor_)), dispatcher_(std::make_shared<dispatcher_rpc_framework::Dispatcher>())
+            {
+                dispatcher_->registerService<base_message::BaseMessage>(public_data::MType::Resp_service, std::bind(&rpc_client::requestor_rpc_framework::Requestor::handleResponse, requestor_.get(), std::placeholders::_1, std::placeholders::_2));
+
+                client_ = client_factory::ClientFactory::clientCreateFactory(ip, port);
+                client_->setMessageCallback(std::bind(&dispatcher_rpc_framework::Dispatcher::executeService, dispatcher_.get(), std::placeholders::_1, std::placeholders::_2));
+
+                // 连接服务端
+                client_->connect();
+            }
+
             bool toRegisterService(const std::string &method, const public_data::host_addr_t &host)
             {
+                return provider_->registerService(client_->connection(), method, host);
             }
 
         private:
+            // requestor需要在provider之前定义，因为provider依赖requestor
+            requestor_rpc_framework::Requestor::ptr requestor_; 
             rpc_client::rpc_registry::Provider::ptr provider_;
             dispatcher_rpc_framework::Dispatcher::ptr dispatcher_;
-            requestor_rpc_framework::Requestor::ptr requestor_;
             base_client::BaseClient::ptr client_;
         };
 
@@ -32,14 +47,31 @@ namespace rpc_client
         {
         public:
             using ptr = std::shared_ptr<DiscovererClient>;
-            bool handleDiscoveryRequest(const std::string &method, public_data::host_addr_t &host)
+            DiscovererClient(const std::string &ip, const uint16_t port)
+                : requestor_(std::make_shared<requestor_rpc_framework::Requestor>()), discoverer_(std::make_shared<rpc_client::rpc_registry::Discoverer>(requestor_)), dispatcher_(std::make_shared<dispatcher_rpc_framework::Dispatcher>())
             {
+                // 处理服务发现请求对应的响应
+                dispatcher_->registerService<base_message::BaseMessage>(public_data::MType::Resp_service, std::bind(&rpc_client::requestor_rpc_framework::Requestor::handleResponse, requestor_.get(), std::placeholders::_1, std::placeholders::_2));
+
+                // 处理服务上线/下线请求对应的响应
+                dispatcher_->registerService<request_message::ServiceRequest>(public_data::MType::Resp_service, std::bind(&rpc_client::rpc_registry::Discoverer::handleOnlineOfflineServiceRequest, discoverer_.get(),std::placeholders::_1, std::placeholders::_2));
+
+                client_ = client_factory::ClientFactory::clientCreateFactory(ip, port);
+                client_->setMessageCallback(std::bind(&dispatcher_rpc_framework::Dispatcher::executeService, dispatcher_.get(), std::placeholders::_1, std::placeholders::_2));
+
+                // 连接服务端
+                client_->connect();
+            }
+            bool toHandleDiscoveryRequest(const std::string &method, public_data::host_addr_t &host)
+            {
+                return discoverer_->handleDiscoveryRequest(client_->connection(), method, host);
             }
 
         private:
-            rpc_client::rpc_registry::Discoverer::ptr provider_;
-            dispatcher_rpc_framework::Dispatcher::ptr dispatcher_;
+            // requestor在discoverer之前
             requestor_rpc_framework::Requestor::ptr requestor_;
+            rpc_client::rpc_registry::Discoverer::ptr discoverer_;
+            dispatcher_rpc_framework::Dispatcher::ptr dispatcher_;
             base_client::BaseClient::ptr client_;
         };
 
