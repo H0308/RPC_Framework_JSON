@@ -117,9 +117,10 @@ namespace rpc_client
         {
         public:
             using ptr = std::shared_ptr<Discoverer>;
+            using offlineCallback_t = std::function<void(const public_data::host_addr_t&)>;
 
-            Discoverer(const requestor_rpc_framework::Requestor::ptr &requestor)
-                : requestor_(requestor)
+            Discoverer(const requestor_rpc_framework::Requestor::ptr &requestor, const offlineCallback_t &cb)
+                : requestor_(requestor), offline_cb_(cb)
             {
             }
 
@@ -166,6 +167,10 @@ namespace rpc_client
                     auto method_hosts = pos->second;
                     auto host = msg->getHost();
                     method_hosts->removeHost(host);
+
+                    // 在服务提供者下线时需要将该服务提供者从RpcClient的连接池中移除
+                    if(offline_cb_)
+                        offline_cb_(msg->getHost());
                 }
             }
 
@@ -226,6 +231,8 @@ namespace rpc_client
             std::mutex manage_mtx_;
             std::unordered_map<std::string, MethodHost::ptr> service_providers_; // 每一个方法对应的所有提供者信息和方法映射表
             requestor_rpc_framework::Requestor::ptr requestor_;
+            // 客户端离线时的处理回调
+            offlineCallback_t offline_cb_;
         };
     }
 }
