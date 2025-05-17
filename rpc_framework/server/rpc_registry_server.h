@@ -253,6 +253,8 @@ namespace rpc_server
         class ProviderDiscovererManager
         {
         public:
+            using ptr = std::shared_ptr<ProviderDiscovererManager>;
+
             ProviderDiscovererManager()
                 : provider_manager_(std::make_shared<ServiceProviderManager>()),
                   discoverer_manager_(std::make_shared<ServiceDiscovererManager>())
@@ -260,7 +262,7 @@ namespace rpc_server
             }
 
             // 处理服务请求
-            void handleRegisterDiscoverRequest (const base_connection::BaseConnection::ptr &con, const request_message::ServiceRequest::ptr &msg)
+            void handleRegisterDiscoverRequest(const base_connection::BaseConnection::ptr &con, const request_message::ServiceRequest::ptr &msg)
             {
                 // 收到服务请求只有两种情况：服务发现和服务注册
                 // 对于服务上线和下线通知是当前服务端发送给客户端，需要由客户端进行处理的
