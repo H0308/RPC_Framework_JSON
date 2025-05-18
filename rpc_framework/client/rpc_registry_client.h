@@ -187,7 +187,10 @@ namespace rpc_client
                         // 如果不为空，说明可以选择一个主机信息进行返回
                         auto method_host = pos->second;
                         if (!method_host->emptyHosts())
+                        {
                             host = method_host->choostHost();
+                            return true;
+                        }
                     }
                 }
 

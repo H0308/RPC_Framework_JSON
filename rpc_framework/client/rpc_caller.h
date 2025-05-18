@@ -19,7 +19,7 @@ namespace rpc_client
             using aysnc_response = std::future<Json::Value>;
             using callback_t = std::function<void(const Json::Value &)>;
 
-            RpcCaller(requestor_rpc_framework::Requestor::ptr requestor)
+            RpcCaller(const requestor_rpc_framework::Requestor::ptr &requestor)
                 : requestor_(requestor)
             {
             }

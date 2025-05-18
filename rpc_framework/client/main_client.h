@@ -83,10 +83,10 @@ namespace rpc_client
 
             RpcClient(bool isToDiscover, const std::string &ip, const uint16_t port)
                 : isToDiscover_(isToDiscover), requestor_(std::make_shared<requestor_rpc_framework::Requestor>()), dispatcher_(std::make_shared<dispatcher_rpc_framework::Dispatcher>()),
-                  rpc_caller_(std::make_shared<rpc_client::rpc_caller::RpcCaller>())
+                  rpc_caller_(std::make_shared<rpc_client::rpc_caller::RpcCaller>(requestor_))
             {
                 // 处理RPC调用的回调
-                dispatcher_->registerService<base_message::BaseMessage>(public_data::MType::Resp_service, std::bind(&rpc_client::requestor_rpc_framework::Requestor::handleResponse, requestor_.get(), std::placeholders::_1, std::placeholders::_2));
+                dispatcher_->registerService<base_message::BaseMessage>(public_data::MType::Resp_rpc, std::bind(&rpc_client::requestor_rpc_framework::Requestor::handleResponse, requestor_.get(), std::placeholders::_1, std::placeholders::_2));
 
                 if (isToDiscover_)
                 {
@@ -109,6 +109,8 @@ namespace rpc_client
             // 同步函数
             bool call(const std::string &method_name, const Json::Value &params, Json::Value &result)
             {
+                // debug
+                LOG(Level::Debug, "进入RpcClient的call同步函数");
                 // 获取到指定的客户端调用
                 base_client::BaseClient::ptr client = getClient(method_name);
                 if(!client)
@@ -149,6 +151,21 @@ namespace rpc_client
 
                 // 调用Rpc调用接口执行任务
                 return rpc_caller_->call(client->connection(), method_name, params, cb);
+            }
+
+            void shutdown()
+            {
+                // 清理其他连接资源
+                std::unique_lock<std::mutex> lock(manage_map_mtx_);
+                for (auto &pair : clients_)
+                    if (pair.second)
+                        pair.second->shutdown();
+                        
+                clients_.clear();
+
+                // 确保资源按正确顺序释放
+                if (client_)
+                    client_->shutdown();
             }
 
         private:
@@ -236,7 +253,8 @@ namespace rpc_client
             // 自定义类型host_addr_t需要实现哈希函数，否则编译报错，因为unordered_map无法确定如何计算哈希值
             struct hostAddrHash
             {
-                size_t operator()(const public_data::host_addr_t &h)
+                // 用于unordered_map的仿函数hash对象需要为实现const版本的operator()重载函数
+                size_t operator()(const public_data::host_addr_t &h) const
                 {
                     // 将主机地址信息转换为字符串类型便于使用std::hash计算哈希值
                     std::string host = h.first + std::to_string(h.second);
@@ -245,9 +263,9 @@ namespace rpc_client
             };
             bool isToDiscover_;                       // 是否需要进行服务发现
             DiscovererClient::ptr discoverer_client_; // 进行服务发现时启用服务发现客户端
+            requestor_rpc_framework::Requestor::ptr requestor_;
             rpc_client::rpc_caller::RpcCaller::ptr rpc_caller_;
             dispatcher_rpc_framework::Dispatcher::ptr dispatcher_;
-            requestor_rpc_framework::Requestor::ptr requestor_;
             base_client::BaseClient::ptr client_;
             std::mutex manage_map_mtx_;
             std::unordered_map<public_data::host_addr_t, base_client::BaseClient::ptr, hostAddrHash> clients_; // 已经发现的所有可以提供指定RPC服务的客户端
