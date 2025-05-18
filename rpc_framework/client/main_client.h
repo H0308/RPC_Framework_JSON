@@ -54,7 +54,7 @@ namespace rpc_client
                 dispatcher_->registerService<base_message::BaseMessage>(public_data::MType::Resp_service, std::bind(&rpc_client::requestor_rpc_framework::Requestor::handleResponse, requestor_.get(), std::placeholders::_1, std::placeholders::_2));
 
                 // 处理服务上线/下线请求对应的响应
-                dispatcher_->registerService<request_message::ServiceRequest>(public_data::MType::Resp_service, std::bind(&rpc_client::rpc_registry::Discoverer::handleOnlineOfflineServiceRequest, discoverer_.get(), std::placeholders::_1, std::placeholders::_2));
+                dispatcher_->registerService<request_message::ServiceRequest>(public_data::MType::Req_service, std::bind(&rpc_client::rpc_registry::Discoverer::handleOnlineOfflineServiceRequest, discoverer_.get(), std::placeholders::_1, std::placeholders::_2));
 
                 client_ = client_factory::ClientFactory::clientCreateFactory(ip, port);
                 client_->setMessageCallback(std::bind(&dispatcher_rpc_framework::Dispatcher::executeService, dispatcher_.get(), std::placeholders::_1, std::placeholders::_2));
@@ -113,7 +113,7 @@ namespace rpc_client
                 LOG(Level::Debug, "进入RpcClient的call同步函数");
                 // 获取到指定的客户端调用
                 base_client::BaseClient::ptr client = getClient(method_name);
-                if(!client)
+                if (!client)
                 {
                     LOG(Level::Warning, "获取客户端错误");
                     return false;
@@ -128,7 +128,7 @@ namespace rpc_client
             {
                 // 获取到指定的客户端调用
                 base_client::BaseClient::ptr client = getClient(method_name);
-                if(!client)
+                if (!client)
                 {
                     LOG(Level::Warning, "获取客户端错误");
                     return false;
@@ -143,7 +143,7 @@ namespace rpc_client
             {
                 // 获取到指定的客户端调用
                 base_client::BaseClient::ptr client = getClient(method_name);
-                if(!client)
+                if (!client)
                 {
                     LOG(Level::Warning, "获取客户端错误");
                     return false;
@@ -156,17 +156,40 @@ namespace rpc_client
             // 断开连接
             void shutdown()
             {
-                // 清理其他连接资源
-                std::unique_lock<std::mutex> lock(manage_map_mtx_);
-                for (auto &pair : clients_)
-                    if (pair.second)
-                        pair.second->shutdown();
+                // 首先重置discoverer_client_，因为它可能持有RpcClient的引用
+                if (discoverer_client_)
+                {
+                    LOG(Level::Debug, "正在清理discoverer_client_资源");
+                    discoverer_client_.reset();
+                }
 
-                clients_.clear();
+                {
+                    // 清理clients_映射表中的连接
+                    std::unique_lock<std::mutex> lock(manage_map_mtx_);
+                    LOG(Level::Debug, "正在清理clients_资源，共有{}个连接", clients_.size());
 
-                // 确保资源按正确顺序释放
+                    // 先关闭所有连接，但不立即清除map
+                    for (auto &pair : clients_)
+                        if (pair.second)
+                            pair.second->shutdown();
+
+                    // 显式释放每个shared_ptr
+                    for (auto &pair : clients_)
+                        pair.second.reset();
+
+                    // 最后清空容器
+                    clients_.clear();
+                }
+
+                // 最后关闭并重置主client_
                 if (client_)
+                {
+                    LOG(Level::Debug, "正在清理client_资源");
                     client_->shutdown();
+                    client_.reset();
+                }
+
+                LOG(Level::Info, "RpcClient资源清理完成");
             }
 
         private:
@@ -181,7 +204,7 @@ namespace rpc_client
                 {
                     public_data::host_addr_t host;
                     bool ret = discoverer_client_->toHandleDiscoveryRequest(method, host);
-                    if(!ret)
+                    if (!ret)
                     {
                         LOG(Level::Warning, "Rpc客户端服务发现失败");
                         return base_client::BaseClient::ptr();
@@ -189,7 +212,7 @@ namespace rpc_client
 
                     // 判断是否已经存在对应的服务提供者
                     client = findClient(host);
-                    if(!client)
+                    if (!client)
                     {
                         // 不存在就创建
                         client = createClient(host);
@@ -204,13 +227,13 @@ namespace rpc_client
             }
 
             // 创建新客户端
-            base_client::BaseClient::ptr createClient(const public_data::host_addr_t& host)
+            base_client::BaseClient::ptr createClient(const public_data::host_addr_t &host)
             {
                 base_client::BaseClient::ptr client = client_factory::ClientFactory::clientCreateFactory(host.first, host.second);
-                client_->setMessageCallback(std::bind(&dispatcher_rpc_framework::Dispatcher::executeService, dispatcher_.get(), std::placeholders::_1, std::placeholders::_2));
+                client->setMessageCallback(std::bind(&dispatcher_rpc_framework::Dispatcher::executeService, dispatcher_.get(), std::placeholders::_1, std::placeholders::_2));
 
                 // 连接服务端
-                client_->connect();
+                client->connect();
 
                 insertClient(host, client);
 

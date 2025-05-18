@@ -32,6 +32,7 @@ namespace rpc_client
                 service_req->setMethod(method);
                 service_req->setHost(host);
                 service_req->setServiceOptype(public_data::ServiceOptype::Service_register);
+                service_req->setMType(public_data::MType::Req_service);
 
                 // 发送服务注册请求
                 base_message::BaseMessage::ptr base_resp;
@@ -139,6 +140,8 @@ namespace rpc_client
                     // 如果存在直接向其中添加
                     // 不存在则说明则构造一个该服务对应的MethodHost
                     // 再添加到哈希表中
+
+                    LOG(Level::Info, "服务提供者：{}:{}上线了一个{}服务", msg->getHost().first, msg->getHost().second, msg->getMethod());
                     auto pos = service_providers_.find(method);
                     if (pos == service_providers_.end())
                     {
@@ -156,6 +159,8 @@ namespace rpc_client
                 }
                 else if(type == public_data::ServiceOptype::Service_offline)
                 {
+                    LOG(Level::Info, "服务提供者：{}:{}下线了一个{}服务", msg->getHost().first, msg->getHost().second, msg->getMethod());
+
                     // 2. 服务下线请求处理
                     // 将对应服务的主机从管理主机信息的结构中移除
                     auto pos = service_providers_.find(method);
