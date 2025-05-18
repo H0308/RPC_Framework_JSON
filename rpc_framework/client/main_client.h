@@ -153,6 +153,7 @@ namespace rpc_client
                 return rpc_caller_->call(client->connection(), method_name, params, cb);
             }
 
+            // 断开连接
             void shutdown()
             {
                 // 清理其他连接资源
@@ -160,7 +161,7 @@ namespace rpc_client
                 for (auto &pair : clients_)
                     if (pair.second)
                         pair.second->shutdown();
-                        
+
                 clients_.clear();
 
                 // 确保资源按正确顺序释放
