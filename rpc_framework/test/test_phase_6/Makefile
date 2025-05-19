@@ -9,7 +9,7 @@ all: registry_server rpc_client rpc_server
 # 服务器可执行程序
 registry_server:registry_server.cc
 	$(CC) -o registry_server registry_server.cc $(CFLAGS) $(INCLUDES) $(LDFLAGS)
-h
+
 # 客户端可执行程序
 rpc_client:rpc_client.cc
 	$(CC) -o rpc_client rpc_client.cc $(CFLAGS) $(INCLUDES) $(LDFLAGS)

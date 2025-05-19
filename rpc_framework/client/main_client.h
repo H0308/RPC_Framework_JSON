@@ -67,6 +67,11 @@ namespace rpc_client
                 return discoverer_->handleDiscoveryRequest(client_->connection(), method, host);
             }
 
+            void shutdown()
+            {
+                client_->shutdown();
+            }
+
         private:
             // requestor在discoverer之前
             requestor_rpc_framework::Requestor::ptr requestor_;
@@ -154,42 +159,33 @@ namespace rpc_client
             }
 
             // 断开连接
-            void shutdown()
+            ~RpcClient()
             {
-                // 首先重置discoverer_client_，因为它可能持有RpcClient的引用
-                if (discoverer_client_)
+                // 关闭连接前关闭保存的所有客户端
                 {
-                    LOG(Level::Debug, "正在清理discoverer_client_资源");
-                    discoverer_client_.reset();
-                }
-
-                {
-                    // 清理clients_映射表中的连接
                     std::unique_lock<std::mutex> lock(manage_map_mtx_);
-                    LOG(Level::Debug, "正在清理clients_资源，共有{}个连接", clients_.size());
+                    for (auto &host : clients_)
+                        if (host.second)
+                            host.second->shutdown();
+                    std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
-                    // 先关闭所有连接，但不立即清除map
-                    for (auto &pair : clients_)
-                        if (pair.second)
-                            pair.second->shutdown();
-
-                    // 显式释放每个shared_ptr
-                    for (auto &pair : clients_)
-                        pair.second.reset();
-
-                    // 最后清空容器
+                    // 清空哈希表
                     clients_.clear();
                 }
 
-                // 最后关闭并重置主client_
-                if (client_)
-                {
-                    LOG(Level::Debug, "正在清理client_资源");
-                    client_->shutdown();
-                    client_.reset();
-                }
+                // std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
-                LOG(Level::Info, "RpcClient资源清理完成");
+                // // 关闭已经发现的注册中心
+                // if (discoverer_client_)
+                //     discoverer_client_->shutdown();
+
+                // std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+                // // 关闭当前rpc客户端
+                // if (client_)
+                //     client_->shutdown();
+
+                // std::this_thread::sleep_for(std::chrono::milliseconds(200));
             }
 
         private:

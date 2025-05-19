@@ -53,9 +53,9 @@ int main()
         return 1;
     }
 
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    // client.shutdown();
 
-    client.shutdown();
+    // std::this_thread::sleep_for(std::chrono::seconds(5));
 
     return 0;
 }

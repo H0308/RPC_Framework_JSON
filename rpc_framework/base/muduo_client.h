@@ -23,16 +23,17 @@ namespace muduo_client
               pro_(protocol_factory::ProtocolFactory::createProtocolFactory()),
               count_(1) // 确保客户端在连接建立成功后发送消息
         {
-            // 设置回调函数
-            // 1. 连接回调
-            client_.setConnectionCallback(std::bind(&MuduoClient::connectionCallback, this, std::placeholders::_1));
-            // 2. 消息回调
-            client_.setMessageCallback(std::bind(&MuduoClient::messgaeCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+            
         }
 
         // 连接服务端
         virtual void connect() override
         {
+            // 设置回调函数
+            // 1. 连接回调
+            client_.setConnectionCallback(std::bind(&MuduoClient::connectionCallback, this, std::placeholders::_1));
+            // 2. 消息回调
+            client_.setMessageCallback(std::bind(&MuduoClient::messgaeCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
             client_.connect();
             // 客户端开始在同步计数器等待，防止未连接时发送信息
             count_.wait();
@@ -80,7 +81,7 @@ namespace muduo_client
         {
             if (con->connected())
             {
-                LOG(Level::Warning, "客户端连接成功");
+                LOG(Level::Info, "客户端连接成功");
                 // 设置连接对象指针，便于接下来调用send
                 con_ = connection_factory::ConnectionFactory::createConnectionFactory(pro_, con);
                 // 更改同步计数器，减到0表示成功连接，唤醒客户端，可以进行消息发送

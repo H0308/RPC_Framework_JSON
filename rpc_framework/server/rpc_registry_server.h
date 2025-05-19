@@ -195,7 +195,7 @@ namespace rpc_server
                 auto pos = con_provider_.find(con);
                 if (pos == con_provider_.end())
                 {
-                    LOG(Level::Warning, "不存在指定的发现者，删除失败");
+                    LOG(Level::Info, "当前已经不存在任何发现者");
                     return;
                 }
 
@@ -229,7 +229,7 @@ namespace rpc_server
                 auto pos = discovers_.find(method);
                 if (pos == discovers_.end())
                 {
-                    LOG(Level::Warning, "不存在指定的服务");
+                    LOG(Level::Warning, "当前服务：{}无提供者", method);
                     return;
                 }
 
@@ -299,7 +299,7 @@ namespace rpc_server
                 auto sp = provider_manager_->findProvider(con);
                 if (!sp)
                 {
-                    LOG(Level::Warning, "不存在指定的服务提供者");
+                    LOG(Level::Warning, "不存在指定的发现者，通知结束");
                     return;
                 }
                 for (auto &m : sp->methods_)
