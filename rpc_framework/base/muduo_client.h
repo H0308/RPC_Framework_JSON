@@ -23,17 +23,16 @@ namespace muduo_client
               pro_(protocol_factory::ProtocolFactory::createProtocolFactory()),
               count_(1) // 确保客户端在连接建立成功后发送消息
         {
-            
-        }
-
-        // 连接服务端
-        virtual void connect() override
-        {
             // 设置回调函数
             // 1. 连接回调
             client_.setConnectionCallback(std::bind(&MuduoClient::connectionCallback, this, std::placeholders::_1));
             // 2. 消息回调
             client_.setMessageCallback(std::bind(&MuduoClient::messgaeCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+        }
+
+        // 连接服务端
+        virtual void connect() override
+        {
             client_.connect();
             // 客户端开始在同步计数器等待，防止未连接时发送信息
             count_.wait();
@@ -50,7 +49,7 @@ namespace muduo_client
         virtual bool send(const base_message::BaseMessage::ptr &msg) override
         {
             // 调用BaseConnection中的发送接口
-            if(!con_)
+            if (!con_)
             {
                 LOG(Level::Error, "客户端发送失败，连接不存在");
                 return false;
@@ -89,9 +88,9 @@ namespace muduo_client
             }
             else if (con->disconnected())
             {
+                // 开启后存在内存泄漏，待解决
+                // con_.reset(); // 重置连接指针
                 std::cout << "客户端断开连接" << std::endl;
-                // 重置连接指针
-                con_.reset();
             }
         }
 
@@ -134,7 +133,7 @@ namespace muduo_client
 
     private:
         muduo::net::EventLoopThread loopThread_;
-        muduo::net::EventLoop* loop_; // 不能使用智能指针管理EventLoop对象
+        muduo::net::EventLoop *loop_; // 不能使用智能指针管理EventLoop对象
         muduo::net::TcpClient client_;
         base_connection::BaseConnection::ptr con_;
         muduo::CountDownLatch count_;

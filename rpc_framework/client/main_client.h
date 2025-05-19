@@ -158,36 +158,6 @@ namespace rpc_client
                 return rpc_caller_->call(client->connection(), method_name, params, cb);
             }
 
-            // 断开连接
-            ~RpcClient()
-            {
-                // 关闭连接前关闭保存的所有客户端
-                {
-                    std::unique_lock<std::mutex> lock(manage_map_mtx_);
-                    for (auto &host : clients_)
-                        if (host.second)
-                            host.second->shutdown();
-                    std::this_thread::sleep_for(std::chrono::milliseconds(200));
-
-                    // 清空哈希表
-                    clients_.clear();
-                }
-
-                // std::this_thread::sleep_for(std::chrono::milliseconds(200));
-
-                // // 关闭已经发现的注册中心
-                // if (discoverer_client_)
-                //     discoverer_client_->shutdown();
-
-                // std::this_thread::sleep_for(std::chrono::milliseconds(200));
-
-                // // 关闭当前rpc客户端
-                // if (client_)
-                //     client_->shutdown();
-
-                // std::this_thread::sleep_for(std::chrono::milliseconds(200));
-            }
-
         private:
             // 找到合适的客户端调用接口
             base_client::BaseClient::ptr getClient(const std::string &method)
