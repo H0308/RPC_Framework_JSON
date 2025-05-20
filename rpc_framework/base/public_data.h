@@ -56,7 +56,7 @@ namespace public_data
         RCode_invalid_params,    // 错误参数
         RCode_not_found_service, // 未找到服务
         RCode_invalid_opType,    // 无效操作类型
-        RCode_not_fount_topic,   // 未找到主题
+        RCode_not_found_topic,   // 未找到主题
         RCode_internal_error     // 内部错误
     };
 
