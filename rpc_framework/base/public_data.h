@@ -81,7 +81,7 @@ namespace public_data
             return "未找到服务";
         case RCode::RCode_invalid_opType:
             return "无效操作类型";
-        case RCode::RCode_not_fount_topic:
+        case RCode::RCode_not_found_topic:
             return "未找到主题";
         case RCode::RCode_internal_error:
             return "内部错误";
