@@ -1,5 +1,5 @@
-#ifndef __rpc_rpc_topic_h__
-#define __rpc_rpc_topic_h__
+#ifndef __rpc_rpc_topic_server_h__
+#define __rpc_rpc_topic_server_h__
 
 #include <string>
 #include <unordered_set>
