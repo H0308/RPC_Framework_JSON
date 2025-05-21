@@ -67,7 +67,7 @@ namespace rpc_client
             }
 
             // 处理收到发布的消息
-            void handlerTopicMessagePublishResponse(const base_connection::BaseConnection::ptr &con, const request_message::TopicRequest::ptr &msg)
+            void handleTopicMessagePublishRequest(const base_connection::BaseConnection::ptr &con, const request_message::TopicRequest::ptr &msg)
             {
                 // 判断操作类型是否是主题消息发布
                 public_data::TopicOptype topic_optype = msg->getTopicOptype();

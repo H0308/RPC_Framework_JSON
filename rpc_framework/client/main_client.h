@@ -7,6 +7,7 @@
 #include <rpc_framework/base/dispatcher.h>
 #include <rpc_framework/base/base_client.h>
 #include <rpc_framework/factories/client_factory.h>
+#include <rpc_framework/client/rpc_topic_client.h>
 
 namespace rpc_client
 {
@@ -259,6 +260,62 @@ namespace rpc_client
             base_client::BaseClient::ptr client_;
             std::mutex manage_map_mtx_;
             std::unordered_map<public_data::host_addr_t, base_client::BaseClient::ptr, hostAddrHash> clients_; // 已经发现的所有可以提供指定RPC服务的客户端
+        };
+
+        class TopicClient
+        {
+        public:
+            using ptr = std::shared_ptr<TopicClient>;
+            TopicClient(const std::string &ip, const uint16_t port)
+                : requestor_(std::make_shared<requestor_rpc_framework::Requestor>()), dispatcher_(std::make_shared<dispatcher_rpc_framework::Dispatcher>()), topic_manager_(std::make_shared<rpc_topic::TopicManager>())
+            {
+                // 处理主题响应的回调
+                dispatcher_->registerService<base_message::BaseMessage>(public_data::MType::Resp_topic, std::bind(&rpc_client::requestor_rpc_framework::Requestor::handleResponse, requestor_.get(), std::placeholders::_1, std::placeholders::_2));
+                dispatcher_->registerService<request_message::TopicRequest>(public_data::MType::Req_topic, std::bind(&rpc_topic::TopicManager::handleTopicMessagePublishRequest, topic_manager_.get(), std::placeholders::_1, std::placeholders::_2));
+
+                // 此时就是进行RPC调用
+                client_ = client_factory::ClientFactory::clientCreateFactory(ip, port);
+                client_->setMessageCallback(std::bind(&dispatcher_rpc_framework::Dispatcher::executeService, dispatcher_.get(), std::placeholders::_1, std::placeholders::_2));
+
+                // 连接服务端
+                client_->connect();
+            }
+
+            // 新增主题
+            bool createTopic(const std::string &topic_name)
+            {
+                return topic_manager_->createTopic(client_->connection(), topic_name);
+            }
+
+            // 删除主题
+            bool removeTopic(const std::string &topic_name)
+            {
+                return topic_manager_->removeTopic(client_->connection(), topic_name);
+            }
+
+            // 订阅主题
+            bool subscribeTopic(const std::string &topic_name, const rpc_topic::TopicManager::publishCallback &cb)
+            {
+                return topic_manager_->subscribeTopic(client_->connection(), topic_name, cb);
+            }
+
+            // 取消订阅主题
+            bool cancelSubscribeTopic(const std::string &topic_name)
+            {
+                return topic_manager_->cancelSubscribeTopic(client_->connection(), topic_name);
+            }
+
+            // 主题发布
+            bool publishTopicMessage(const std::string &topic_name, const std::string &content)
+            {
+                return topic_manager_->publishTopicMessage(client_->connection(), topic_name, content);
+            }
+
+        private:
+            requestor_rpc_framework::Requestor::ptr requestor_;
+            dispatcher_rpc_framework::Dispatcher::ptr dispatcher_;
+            base_client::BaseClient::ptr client_;
+            rpc_topic::TopicManager::ptr topic_manager_;
         };
     }
 }
