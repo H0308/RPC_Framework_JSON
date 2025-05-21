@@ -41,7 +41,15 @@ namespace rpc_client
             {
                 // 先插入回调函数，防止后续刚订阅主题就有消息需要处理
                 insertCallback(topic_name, cb);
-                return baseRequest(con, topic_name, public_data::TopicOptype::Topic_subscribe);
+                bool ret = baseRequest(con, topic_name, public_data::TopicOptype::Topic_subscribe);
+                if(!ret)
+                {
+                    // 删除回调函数并返回
+                    removeCallback(topic_name);
+                    return false;
+                }
+
+                return true;
             }
 
             // 取消订阅主题
