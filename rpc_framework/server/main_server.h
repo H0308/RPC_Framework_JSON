@@ -103,6 +103,8 @@ namespace rpc_server
         class TopicServer
         {
         public:
+            using ptr = std::shared_ptr<TopicServer>;
+
             TopicServer(const uint16_t port)
                 : dispatcher_(std::make_shared<dispatcher_rpc_framework::Dispatcher>())
                 , topic_manager_(std::make_shared<rpc_topic::TopicManager>())
