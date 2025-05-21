@@ -53,7 +53,10 @@ namespace rpc_server
                 }
 
                 if(!ret)
+                {
                     sendErrorResponse(con, msg, public_data::RCode::RCode_not_found_topic);
+                    return;
+                }
                 
                 sendTopicResponse(con, msg);
             }
@@ -70,11 +73,6 @@ namespace rpc_server
                 {
                     std::unique_lock<std::mutex> lock(manage_map_mtx_);
                     auto it_sub = con_subscriber_.find(con);
-                    if(it_sub == con_subscriber_.end())
-                    {
-                        LOG(Level::Warning, "不存在指定的订阅者，删除失败");
-                        return;
-                    }
 
                     subscriber = it_sub->second;
                     for(auto &topic_name : it_sub->second->topic_names_)
@@ -97,7 +95,7 @@ namespace rpc_server
                 std::unique_lock<std::mutex> lock(manage_map_mtx_);
                 std::string topic_name = msg->getTopicName();
                 auto it = topics_.find(topic_name);
-                if (it == topics_.end())
+                if (it != topics_.end())
                 {
                     LOG(Level::Warning, "指定主题已经存在");
                     return;
@@ -318,12 +316,6 @@ namespace rpc_server
                 void insertSubscriber(const Subscriber::ptr &subsciber)
                 {
                     std::unique_lock<std::mutex> lock(manage_set_mtx_);
-                    auto it = subscibers_.find(subsciber);
-                    if (it != subscibers_.end())
-                    {
-                        LOG(Level::Warning, "已存在指定的订阅者");
-                        return;
-                    }
                     subscibers_.insert(subsciber);
                 }
 
@@ -331,12 +323,6 @@ namespace rpc_server
                 void removeSubscriber(const Subscriber::ptr &subsciber)
                 {
                     std::unique_lock<std::mutex> lock(manage_set_mtx_);
-                    auto it = subscibers_.find(subsciber);
-                    if (it != subscibers_.end())
-                    {
-                        LOG(Level::Warning, "已存在指定的订阅者");
-                        return;
-                    }
                     subscibers_.erase(subsciber);
                 }
 

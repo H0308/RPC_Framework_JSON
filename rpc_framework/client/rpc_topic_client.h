@@ -148,7 +148,7 @@ namespace rpc_client
             }
 
             // 获取回调函数接口
-            const publishCallback &findPublishCallback(const std::string &topic_name)
+            const publishCallback findPublishCallback(const std::string &topic_name)
             {
                 std::unique_lock<std::mutex> lock(manager_map_mtx_);
                 auto it = topic_callback_.find(topic_name);

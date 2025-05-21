@@ -267,7 +267,7 @@ namespace rpc_client
         public:
             using ptr = std::shared_ptr<TopicClient>;
             TopicClient(const std::string &ip, const uint16_t port)
-                : requestor_(std::make_shared<requestor_rpc_framework::Requestor>()), dispatcher_(std::make_shared<dispatcher_rpc_framework::Dispatcher>()), topic_manager_(std::make_shared<rpc_topic::TopicManager>())
+                : requestor_(std::make_shared<requestor_rpc_framework::Requestor>()), dispatcher_(std::make_shared<dispatcher_rpc_framework::Dispatcher>()), topic_manager_(std::make_shared<rpc_topic::TopicManager>(requestor_))
             {
                 // 处理主题响应的回调
                 dispatcher_->registerService<base_message::BaseMessage>(public_data::MType::Resp_topic, std::bind(&rpc_client::requestor_rpc_framework::Requestor::handleResponse, requestor_.get(), std::placeholders::_1, std::placeholders::_2));
