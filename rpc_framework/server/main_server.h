@@ -6,6 +6,7 @@
 #include <rpc_framework/factories/server_factory.h>
 #include <rpc_framework/client/main_client.h>
 #include <rpc_framework/server/rpc_router.h>
+#include <rpc_framework/server/rpc_topic_server.h>
 
 namespace rpc_server
 {
@@ -56,16 +57,16 @@ namespace rpc_server
             // registry_addr表示注册中心的地址信息
             // 是否需要启用服务注册功能取决于isToRegistry是否为true
             RpcServer(const public_data::host_addr_t &host_addr, bool isToRegistry = false, const public_data::host_addr_t &registry_addr = public_data::host_addr_t())
-                :rpc_router_(std::make_shared<rpc_router::RpcRouter>()),
-                dispatcher_(std::make_shared<dispatcher_rpc_framework::Dispatcher>()),
-                isToRegistry_(isToRegistry),
-                host_addr_(host_addr)
+                : rpc_router_(std::make_shared<rpc_router::RpcRouter>()),
+                  dispatcher_(std::make_shared<dispatcher_rpc_framework::Dispatcher>()),
+                  isToRegistry_(isToRegistry),
+                  host_addr_(host_addr)
             {
                 // 向dispatcher模块注册rpc处理函数
                 dispatcher_->registerService<request_message::RpcRequest>(public_data::MType::Req_rpc, std::bind(&rpc_router::RpcRouter::onRpcRequest, rpc_router_.get(), std::placeholders::_1, std::placeholders::_2));
 
                 // 判断是否启用服务注册决定是否初始化服务注册客户端
-                if(isToRegistry_)
+                if (isToRegistry_)
                     reg_client_ = std::make_shared<rpc_client::main_client::RegisterClient>(registry_addr.first, registry_addr.second);
 
                 // 创建服务端
@@ -83,7 +84,7 @@ namespace rpc_server
             void registryService(const rpc_router::ServiceDesc::ptr &s)
             {
                 // 如果启用了服务注册，此时需要调用服务注册客户端的注册方法
-                if(isToRegistry_)
+                if (isToRegistry_)
                     reg_client_->toRegisterService(s->getMethodName(), host_addr_);
 
                 // 向rpc_router模块中注册服务
@@ -91,12 +92,45 @@ namespace rpc_server
             }
 
         private:
-            bool isToRegistry_; // 是否启用服务注册
+            bool isToRegistry_;                                       // 是否启用服务注册
             rpc_client::main_client::RegisterClient::ptr reg_client_; // 用于服务注册的客户端
             rpc_router::RpcRouter::ptr rpc_router_;                   // 用于处理RPC服务
             dispatcher_rpc_framework::Dispatcher::ptr dispatcher_;
             base_server::BaseServer::ptr server_; // 用于处理rpc服务的服务端
-            public_data::host_addr_t host_addr_; // 提供rpc服务的服务端信息
+            public_data::host_addr_t host_addr_;  // 提供rpc服务的服务端信息
+        };
+
+        class TopicServer
+        {
+        public:
+            TopicServer(const uint16_t port)
+                : dispatcher_(std::make_shared<dispatcher_rpc_framework::Dispatcher>())
+                , topic_manager_(std::make_shared<rpc_topic::TopicManager>())
+            {
+                // 设置回调函数
+                dispatcher_->registerService<request_message::TopicRequest>(public_data::MType::Req_topic, std::bind(&rpc_topic::TopicManager::handleTopicRequest, topic_manager_.get(), std::placeholders::_1, std::placeholders::_2));
+
+                server_ = server_factory::ServerFactory::serverCreateFactory(port);
+                server_->setMessageCallback(std::bind(&dispatcher_rpc_framework::Dispatcher::executeService, dispatcher_.get(), std::placeholders::_1, std::placeholders::_2));
+                server_->setCloseCallback(std::bind(&TopicServer::handleConnectionCallback, this, std::placeholders::_1));
+            }
+
+            void start()
+            {
+                server_->start();
+            }
+
+        private:
+            // 提供连接断开回调的封装函数
+            void handleConnectionCallback(const base_connection::BaseConnection::ptr &con)
+            {
+                topic_manager_->handleConnectionShutdown(con);
+            }
+
+        private:
+            dispatcher_rpc_framework::Dispatcher::ptr dispatcher_;
+            base_server::BaseServer::ptr server_; // 用于处理主题服务的服务端
+            rpc_topic::TopicManager::ptr topic_manager_;
         };
     }
 }
