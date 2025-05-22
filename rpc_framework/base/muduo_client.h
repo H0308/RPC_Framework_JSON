@@ -88,8 +88,7 @@ namespace muduo_client
             }
             else if (con->disconnected())
             {
-                // 开启后存在内存泄漏，待解决
-                // con_.reset(); // 重置连接指针
+                con_.reset(); // 重置连接指针
                 std::cout << "客户端断开连接" << std::endl;
             }
         }
@@ -133,9 +132,9 @@ namespace muduo_client
 
     private:
         muduo::net::EventLoopThread loopThread_;
-        muduo::net::EventLoop *loop_; // 不能使用智能指针管理EventLoop对象
+        muduo::net::EventLoop *loop_; // 不能使用智能指针管理EventLoop对象，因为此处是“借用”而不是“拥有”
+        base_connection::BaseConnection::ptr con_; // 保证BaseConnection指针后于TcpClient对象释放空间
         muduo::net::TcpClient client_;
-        base_connection::BaseConnection::ptr con_;
         muduo::CountDownLatch count_;
         base_protocol::BaseProtocol::ptr pro_;
     };
