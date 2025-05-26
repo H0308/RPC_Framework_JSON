@@ -13,34 +13,33 @@ namespace json_util
     {
     public:
         // JSON字符串转换为普通字符串，外部需要传递JSON字符串
-        static bool serialize(const Json::Value &json_str, std::string &in_str)
+        static bool serialize(const Json::Value &json_object, std::string &json_str)
         {
             std::stringstream ss;          // 先实例化⼀个⼯⼚类对象
             Json::StreamWriterBuilder swb; // 通过⼯⼚类对象来⽣产派⽣类对象
             std::unique_ptr<Json::StreamWriter> sw(swb.newStreamWriter());
-            int ret = sw->write(json_str, &ss);
+            int ret = sw->write(json_object, &ss);
             if (ret != 0)
             {
                 LOG(log_system::Level::Error, "JSON序列化失败");
                 return false;
             }
-            in_str = ss.str();
+            json_str = ss.str();
             return true;
         }
 
         // 普通字符串转换为JSON字符串，外部需要对JSON字符串进行处理
-        static bool deserialize(const std::string &out_str, Json::Value &json_str)
+        static bool deserialize(const std::string &json_str, Json::Value &json_object)
         {
             // 实例化⼯⼚类对象
             Json::CharReaderBuilder crb;
             // ⽣产CharReader对象
             std::string errs;
             std::unique_ptr<Json::CharReader> cr(crb.newCharReader());
-            bool ret = cr->parse(out_str.c_str(), out_str.c_str() + out_str.size(), &json_str,
-                                 &errs);
+            bool ret = cr->parse(json_str.c_str(), json_str.c_str() + json_str.size(), &json_object, &errs);
             if (ret == false)
             {
-                LOG(Level::Error, "json unserialize failed : {}", errs);
+                LOG(Level::Error, "JSON反序列化失败: {}", errs);
                 return false;
             }
             return true;

@@ -78,7 +78,7 @@ namespace dispatcher_rpc_framework
         {
         }
 
-        void excuteService(const base_connection::BaseConnection::ptr &conn, base_message::BaseMessage::ptr &msg)
+        void excuteService(const base_connection::BaseConnection::ptr &conn, base_message::BaseMessage::ptr &msg) override
         {
             auto type_msg = std::dynamic_pointer_cast<T>(msg);
             handler_(conn, type_msg);
@@ -100,9 +100,9 @@ namespace dispatcher_rpc_framework
     //         : handler_(handler)
     //     {
     //     }
-    //     void excuteService(const BaseConnection::ptr &conn, const public_data::messageCallback_t &cb)
+    //     void excuteService(const BaseConnection::ptr &conn, const base_message::BaseMessage::ptr &msg)
     //     {
-    //         auto msg = std::dynamic_pointer_cast<T>(msg);
+    //         auto type_msg = std::dynamic_pointer_cast<T>(msg);
     //         handler_(conn, type_msg);
     //     }
     // private:

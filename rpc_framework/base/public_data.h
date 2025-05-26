@@ -61,7 +61,7 @@ namespace public_data
     };
 
     // 获取错误原因字符串
-    static std::string errReason(RCode code)
+    std::string errReason(RCode code)
     {
         switch (code)
         {
@@ -99,6 +99,7 @@ namespace public_data
         Req_callback   // 回调模式
     };
 
+    // 主题操作类型
     enum class TopicOptype
     {
         Topic_create = 0, // 主题创建
@@ -108,6 +109,7 @@ namespace public_data
         Topic_publish     // 主题消息发布
     };
 
+    // 服务操作类型
     enum class ServiceOptype
     {
         Service_register = 0, // 服务注册
@@ -115,7 +117,6 @@ namespace public_data
         Service_online,       // 服务上线
         Service_offline,      // 服务下线
         Service_wrong_type,   // 错误服务类型
-        Service_unknown       // 不存在的服务类型
     };
 }
 

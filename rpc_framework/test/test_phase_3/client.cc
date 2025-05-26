@@ -57,15 +57,16 @@ int main()
     rpc_req->setParams(root);
     rpc_req->setId("first");
     rpc_req->setMType(public_data::MType::Req_rpc);
-    mc->send(rpc_req);
+    // 调用Connection中的send发送
+    mc->connection()->send(rpc_req);
 
     auto topic_req = message_factory::MessageFactory::messageCreateFactory<request_message::TopicRequest>();
     topic_req->setId("second");
     topic_req->setMType(public_data::MType::Req_topic);
     topic_req->setTopicName("music");
     topic_req->setTopicOptype(public_data::TopicOptype::Topic_create);
-    
-    mc->send(topic_req);
+
+    mc->connection()->send(topic_req);
 
     std::this_thread::sleep_for(std::chrono::seconds(10));
 

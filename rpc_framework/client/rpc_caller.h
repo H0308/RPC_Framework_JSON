@@ -75,7 +75,7 @@ namespace rpc_client
                 bool ret = requestor_->sendRequest(con, std::dynamic_pointer_cast<base_message::BaseMessage>(rpc_req), cb);
                 if (!ret)
                 {
-                    LOG(Level::Warning, "同步处理请求失败");
+                    LOG(Level::Warning, "异步处理请求失败");
                     return false;
                 }
 
@@ -97,7 +97,7 @@ namespace rpc_client
                 bool ret = requestor_->sendRequest(con, std::dynamic_pointer_cast<base_message::BaseMessage>(rpc_req), req_cb);
                 if (!ret)
                 {
-                    LOG(Level::Warning, "同步处理请求失败");
+                    LOG(Level::Warning, "回调处理请求失败");
                     return false;
                 }
 

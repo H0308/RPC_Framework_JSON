@@ -320,7 +320,7 @@ namespace rpc_server
                 service_resp->setId(msg->getReqRespId());
                 // 设置方法和主机信息
                 service_resp->setMType(public_data::MType::Resp_service);
-                service_resp->setServiceOptye(public_data::ServiceOptype::Service_unknown);
+                service_resp->setServiceOptye(public_data::ServiceOptype::Service_wrong_type);
                 service_resp->setRCode(public_data::RCode::RCode_not_found_service);
 
                 con->send(service_resp);

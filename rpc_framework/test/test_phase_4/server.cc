@@ -37,7 +37,7 @@ int main()
 
     // 将router中的处理请求的函数注册到Dispatcher中
     auto dispatcher = std::make_shared<dispatcher_rpc_framework::Dispatcher>();
-    dispatcher->registerService<request_message::RpcRequest>(public_data::MType::Req_rpc, std::bind(&rpc_server::rpc_router::RpcRouter::onRpcRequest, router.get(), std::placeholders::_1, std::placeholders::_2));
+    dispatcher->registerService<request_message::RpcRequest>(public_data::MType::Req_rpc, std::bind(&rpc_server::rpc_router::RpcRouter::handleRpcRequest, router.get(), std::placeholders::_1, std::placeholders::_2));
 
     // 创建服务器并启动
     auto server = server_factory::ServerFactory::serverCreateFactory(8080);

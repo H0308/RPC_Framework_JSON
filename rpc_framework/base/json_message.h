@@ -14,6 +14,7 @@ namespace json_message
     // 比BaseMessage部分多一个字段：正文
     // 但是因为正文具体内容需要由具体的子类实现
     // ! 为什么不对mtype和id进行序列化？
+    // ? 因为Message类只负责正文部分
     class JsonMessage : public base_message::BaseMessage
     {
     public:

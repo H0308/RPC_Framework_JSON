@@ -34,6 +34,8 @@ namespace rpc_server
         public:
             using ptr = std::shared_ptr<ServiceDesc>;
 
+            // ServiceDesc() = default;
+
             // 右值不能带const
             ServiceDesc(std::string &&method, handler_t &&handler, std::vector<params_desciption_t> &&params, params_type &&return_type)
                 : method_name_(std::move(method)), handler_(std::move(handler)), params_(params), return_type_(std::move(return_type))
@@ -118,6 +120,7 @@ namespace rpc_server
             }
 
         private:
+            // friend class ServiceDescFactory;          // 建造者友元类
             std::string method_name_;                 // 方法名
             handler_t handler_;                       // 业务回调函数
             std::vector<params_desciption_t> params_; // 保存所有参数和对应的类型
@@ -129,12 +132,12 @@ namespace rpc_server
         class ServiceDescFactory
         {
         public:
-            void setMethodName(const std::string& name)
+            void setMethodName(const std::string &name)
             {
                 method_name_ = name;
             }
 
-            void setHandler(const handler_t& handler)
+            void setHandler(const handler_t &handler)
             {
                 handler_ = handler;
             }
@@ -144,7 +147,7 @@ namespace rpc_server
                 params_.emplace_back(param, pt);
             }
 
-            void setReturnType(const params_type& type)
+            void setReturnType(const params_type &type)
             {
                 return_type_ = type;
             }
@@ -153,12 +156,53 @@ namespace rpc_server
             {
                 return std::make_shared<ServiceDesc>(std::move(method_name_), std::move(handler_), std::move(params_), std::move(return_type_));
             }
+
         private:
             std::string method_name_;                 // 方法名
             handler_t handler_;                       // 业务回调函数
             std::vector<params_desciption_t> params_; // 保存所有参数和对应的类型
             params_type return_type_;                 // 返回值类型
         };
+
+        // 使用友元类
+#if 0
+        class ServiceDescFactory
+        {
+        public:
+            ServiceDescFactory()
+                : desc_(std::make_shared<ServiceDesc>())
+            {
+            }
+
+            void setMethodName(const std::string &name)
+            {
+                desc_->method_name_ = name;
+            }
+
+            void setHandler(const handler_t &handler)
+            {
+                desc_->handler_ = handler;
+            }
+
+            void setParams(const std::string &param, params_type pt)
+            {
+                desc_->params_.emplace_back(param, pt);
+            }
+
+            void setReturnType(const params_type &type)
+            {
+                desc_->return_type_ = type;
+            }
+
+            ServiceDesc::ptr buildServiceDesc()
+            {
+                return desc_;
+            }
+
+        private:
+            ServiceDesc::ptr desc_;
+        };
+#endif
 
         class ServiceManager
         {
@@ -180,11 +224,11 @@ namespace rpc_server
             }
 
             // 查找服务接口
-            ServiceDesc::ptr findService(const std::string& method)
+            ServiceDesc::ptr findService(const std::string &method)
             {
                 std::unique_lock<std::mutex> lock(manage_mtx_);
                 auto pos = service_manager_.find(method);
-                if(pos == service_manager_.end())
+                if (pos == service_manager_.end())
                 {
                     LOG(Level::Warning, "指定服务不存在：{}", method);
                     return nullptr;
@@ -204,24 +248,23 @@ namespace rpc_server
             using ptr = std::shared_ptr<RpcRouter>;
 
             RpcRouter()
-                :services_(std::make_shared<ServiceManager>())
+                : services_(std::make_shared<ServiceManager>())
             {
-
             }
 
             // 提供给Dispatcher模块的注册回调
-            void onRpcRequest(const base_connection::BaseConnection::ptr &con, request_message::RpcRequest::ptr &msg)
+            void handleRpcRequest(const base_connection::BaseConnection::ptr &con, request_message::RpcRequest::ptr &msg)
             {
                 // 1. 查找请求服务是否存在
                 auto pos = services_->findService(msg->getMethod());
-                if(!pos)
+                if (!pos)
                 {
                     LOG(Level::Warning, "请求的：{} 服务不存在", msg->getMethod());
                     buildRpcResponse(con, msg, Json::Value(), public_data::RCode::RCode_not_found_service);
                 }
 
                 // 2. 判断请求中提供的参数是否正确
-                if(!pos->paramsCheck(msg->getParams()))
+                if (!pos->paramsCheck(msg->getParams()))
                 {
                     LOG(Level::Warning, "请求的：{} 服务参数错误", msg->getMethod());
                     buildRpcResponse(con, msg, Json::Value(), public_data::RCode::RCode_invalid_params);
@@ -230,7 +273,7 @@ namespace rpc_server
                 // 3. 调用ServiceManager类中的函数执行服务
                 Json::Value result;
                 bool ret = pos->callHandler(msg->getParams(), result);
-                if(!ret)
+                if (!ret)
                 {
                     LOG(Level::Warning, "请求的：{} 服务返回值错误（内部错误）", msg->getMethod());
                     buildRpcResponse(con, msg, Json::Value(), public_data::RCode::RCode_internal_error);
@@ -246,8 +289,9 @@ namespace rpc_server
             {
                 services_->insertService(s);
             }
+
         private:
-            void buildRpcResponse(const base_connection::BaseConnection::ptr &con, request_message::RpcRequest::ptr &msg, const Json::Value& ret, public_data::RCode rcode)
+            void buildRpcResponse(const base_connection::BaseConnection::ptr &con, request_message::RpcRequest::ptr &msg, const Json::Value &ret, public_data::RCode rcode)
             {
                 // 构建RpcResponse对象并填充字段
                 auto rpc_resp = message_factory::MessageFactory::messageCreateFactory<response_message::RpcResponse>();

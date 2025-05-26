@@ -123,12 +123,12 @@ namespace log_system
         // 控制台指针
         std::shared_ptr<spdlog::logger> logger_;
         // 单例锁
-        static std::mutex single_mtx_;
+        // static std::mutex single_mtx_;
         // 模式切换锁
         std::mutex mode_mtx_;
     };
 
-    std::mutex LogSystem::single_mtx_;
+    // std::mutex LogSystem::single_mtx_;
     std::shared_ptr<LogSystem> LogSystem::baseLog_ = nullptr;
 
     // 获取日志系统类对象

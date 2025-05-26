@@ -56,7 +56,7 @@ namespace request_message
             return body_[KEY_PARAMS];
         }
 
-    private:
+    // private:
         // 不需要成员，直接设置到正文JSON对象中
         // 因为下面的成员本质就是body_对象中的字段
         // 而不是单独出来的字段
@@ -140,7 +140,7 @@ namespace request_message
             return body_[KEY_TOPIC_MSG].asString();
         }
 
-    private:
+    // private:
         // 不需要成员，直接设置到正文JSON对象中
         // std::string name_;
         // public_data::TopicOptype op_;
@@ -219,7 +219,7 @@ namespace request_message
             // host_.second = host[KEY_HOST][KEY_HOST_PORT].asInt();
             // 以一个对象的方式插入到body_中
             Json::Value val;
-            // ! 这里不需要指定host，直接指定IP和Port即可，再讲整体存入到host中
+            // ! 这里不需要指定host，直接指定IP和Port即可，再将整体存入到host中
             val[KEY_HOST_IP] = host.first;
             val[KEY_HOST_PORT] = host.second;
             body_[KEY_HOST] = val;
@@ -235,7 +235,7 @@ namespace request_message
             return host;
         }
 
-    private:
+    // private:
         // 不需要成员，直接设置到正文JSON对象中
         // std::string name_;              // 方法名
         // public_data::ServiceOptype op_; // 服务操作类型

@@ -259,7 +259,7 @@ namespace rpc_client
             dispatcher_rpc_framework::Dispatcher::ptr dispatcher_;
             base_client::BaseClient::ptr client_;
             std::mutex manage_map_mtx_;
-            std::unordered_map<public_data::host_addr_t, base_client::BaseClient::ptr, hostAddrHash> clients_; // 已经发现的所有可以提供指定RPC服务的客户端
+            std::unordered_map<public_data::host_addr_t, base_client::BaseClient::ptr, hostAddrHash> clients_; // 已经发现的所有可以提供指定RPC服务的服务端
         };
 
         class TopicClient

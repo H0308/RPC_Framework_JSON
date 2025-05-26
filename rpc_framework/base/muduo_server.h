@@ -112,7 +112,7 @@ namespace muduo_server
 
                 // 创建BaseMessage对象指针，交给BaseProtocol中的反序列化接口创建对象
                 base_message::BaseMessage::ptr b_msg;
-                if(!pro_->getContentFromProtocol(b_buffer, b_msg))
+                if(!pro_->getContentFromBuffer(b_buffer, b_msg))
                 {
                     LOG(Level::Warning, "反序列化处理失败");
                     break;

@@ -29,8 +29,6 @@ namespace base_client
         virtual void connect() = 0;
         // 关闭连接
         virtual void shutdown() = 0;
-        // 发送消息
-        virtual bool send(const base_message::BaseMessage::ptr &) = 0;
         // 获取连接对象
         virtual base_connection::BaseConnection::ptr connection() = 0;
         // 判断是否连接

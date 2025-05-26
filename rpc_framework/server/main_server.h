@@ -63,7 +63,7 @@ namespace rpc_server
                   host_addr_(host_addr)
             {
                 // 向dispatcher模块注册rpc处理函数
-                dispatcher_->registerService<request_message::RpcRequest>(public_data::MType::Req_rpc, std::bind(&rpc_router::RpcRouter::onRpcRequest, rpc_router_.get(), std::placeholders::_1, std::placeholders::_2));
+                dispatcher_->registerService<request_message::RpcRequest>(public_data::MType::Req_rpc, std::bind(&rpc_router::RpcRouter::handleRpcRequest, rpc_router_.get(), std::placeholders::_1, std::placeholders::_2));
 
                 // 判断是否启用服务注册决定是否初始化服务注册客户端
                 if (isToRegistry_)

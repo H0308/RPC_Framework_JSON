@@ -78,8 +78,7 @@ namespace response_message
             // 如果存在需要判断是否存在方法名和主机信息数组
             if ((body_[KEY_OPTYPE].isInt() == static_cast<int>(public_data::ServiceOptype::Service_discover)) &&
                 (body_[KEY_METHOD].isNull() || !body_[KEY_METHOD].isString()) &&
-                (body_[KEY_HOST][KEY_HOST_IP].isNull() || !body_[KEY_HOST][KEY_HOST_IP].isString()) &&
-                (body_[KEY_HOST][KEY_HOST_PORT].isNull() || !body_[KEY_HOST][KEY_HOST_PORT].isInt()))
+                (body_[KEY_HOST].isNull() || !body_[KEY_HOST].isArray()))
             {
                 LOG(Level::Warning, "操作类型为Service_discover，但是返回值错误");
                 return false;

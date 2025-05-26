@@ -41,7 +41,7 @@ namespace length_value_protocol
             return true;
         }
         // 收到消息时的处理，从buffer中读取数据交给Message类处理
-        virtual bool getContentFromProtocol(const base_buffer::BaseBuffer::ptr &buf, base_message::BaseMessage::ptr &msg) override
+        virtual bool getContentFromBuffer(const base_buffer::BaseBuffer::ptr &buf, base_message::BaseMessage::ptr &msg) override
         {
             // 从缓冲区中获取每一个字段，默认已经判断数据可以处理
             // 即canProcessed返回true
@@ -99,7 +99,8 @@ namespace length_value_protocol
             result.reserve(sizeof(n_total_len) + h_total_len); // 提前开辟空间，提高性能
 
             // 构建应用层协议
-            // 使用二进制方式添加字段，而不是转换为字符，不能使用to_string
+            // 使用二进制方式添加字段，而不是仅仅转换为字符，不能使用to_string
+            // 仅仅转换为字符会只转换可显示字符，导致同一个类型的值在字符串中占用空间不同
             result.append(reinterpret_cast<const char *>(&n_total_len), sizeof(n_total_len));
             result.append(reinterpret_cast<const char *>(&mtype), sizeof(mtype));
             result.append(reinterpret_cast<const char *>(&id_len), sizeof(id_len));

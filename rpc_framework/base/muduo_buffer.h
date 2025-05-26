@@ -10,8 +10,6 @@ namespace muduo_buffer
     // 方法实现底层全部调用Muduo中Buffer类中的方法
     class MuduoBuffer : public base_buffer::BaseBuffer
     {
-        const int valid_length_field_length = 4;
-
     public:
         MuduoBuffer(muduo::net::Buffer *buf)
             : buffer_(buf)
