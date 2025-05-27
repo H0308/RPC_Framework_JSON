@@ -66,10 +66,9 @@ namespace rpc_server
                     // }
 
                     // auto pos = con_provider_.insert({con, std::make_shared<ServiceProvider>(con, host)});
+                    // 使用try_emplace可以先查找key是否存在再创建对象,insert会先构造对象再去判断是否存在
                     auto pos = con_provider_.try_emplace(con, std::make_shared<ServiceProvider>(con, host));
                     sp = pos.first->second;
-
-                    // 使用try_emplace可以先查找key是否存在再创建对象,insert会先构造对象再去判断是否存在
 
                     // 找到指定服务对应的提供者映射数组，插入到该映射数组中
                     // 此处使用引用确保修改有效
@@ -172,22 +171,25 @@ namespace rpc_server
             using ptr = std::shared_ptr<ServiceDiscovererManager>;
 
             // 添加发现者
-            ServiceDiscoverer::ptr insertDiscoverer(const base_connection::BaseConnection::ptr &con, const std::string &method)
+            void insertDiscoverer(const base_connection::BaseConnection::ptr &con, const std::string &method)
             {
                 ServiceDiscoverer::ptr sd;
                 {
                     std::unique_lock<std::mutex> lock(discover_mtx_);
-                    auto pos = con_provider_.find(con);
-                    if (pos == con_provider_.end())
-                    {
-                        // 不存在，插入
-                        sd = std::make_shared<ServiceDiscoverer>(con);
-                        con_provider_.insert({con, sd});
-                    }
-                    else
-                    {
-                        sd = pos->second; // 存在，获取
-                    }
+                    // auto pos = con_provider_.find(con);
+                    // if (pos == con_provider_.end())
+                    // {
+                    //     // 不存在，插入
+                    //     sd = std::make_shared<ServiceDiscoverer>(con);
+                    //     con_provider_.insert({con, sd});
+                    // }
+                    // else
+                    // {
+                    //     sd = pos->second; // 存在，获取
+                    // }
+
+                    auto pos = con_discoverer_.try_emplace(con, std::make_shared<ServiceDiscoverer>(con));
+                    sd = pos.first->second;
 
                     // 获取所有客户端
                     auto &discover = discovers_[method];
@@ -195,15 +197,14 @@ namespace rpc_server
                 }
 
                 sd->insertService(method);
-                return sd;
             }
 
             // 移除发现者
             void removeDiscoverer(const base_connection::BaseConnection::ptr &con)
             {
                 std::unique_lock<std::mutex> lock(discover_mtx_);
-                auto pos = con_provider_.find(con);
-                if (pos == con_provider_.end())
+                auto pos = con_discoverer_.find(con);
+                if (pos == con_discoverer_.end())
                 {
                     LOG(Level::Info, "当前已经不存在任何发现者");
                     return;
@@ -217,7 +218,7 @@ namespace rpc_server
                     discovers.erase(sd);
                 }
 
-                con_provider_.erase(con);
+                con_discoverer_.erase(con);
             }
 
             // 服务上线提醒
@@ -255,9 +256,9 @@ namespace rpc_server
             }
 
         private:
-            std::mutex discover_mtx_;                                                                       // 用于提供者管理的线程安全
+            std::mutex discover_mtx_;             // 用于提供者管理的线程安全
             std::unordered_map<std::string, std::set<ServiceDiscoverer::ptr>> discovers_;                   // 发现指定服务的所有客户端
-            std::unordered_map<base_connection::BaseConnection::ptr, ServiceDiscoverer::ptr> con_provider_; // 管理连接和发现者
+            std::unordered_map<base_connection::BaseConnection::ptr, ServiceDiscoverer::ptr> con_discoverer_; // 管理连接和发现者
         };
 
         class ProviderDiscovererManager

@@ -53,7 +53,5 @@ int main()
 
     std::this_thread::sleep_for(std::chrono::seconds(5));
 
-    client.shutdown();
-
     return 0;
 }
