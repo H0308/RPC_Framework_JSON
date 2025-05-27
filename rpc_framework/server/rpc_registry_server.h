@@ -18,31 +18,32 @@ namespace rpc_server
 
     namespace rpc_registry
     {
+        // 服务提供者信息
+        struct ServiceProvider
+        {
+            using ptr = std::shared_ptr<ServiceProvider>;
+            base_connection::BaseConnection::ptr con_; // 当前提供者的连接信息
+            std::vector<std::string> methods_;         // 当前提供者可以提供的所有服务
+            public_data::host_addr_t host_;            // 当前提供者的主机信息
+
+            std::mutex method_mtx_; // 用于服务管理的线程安全
+
+            ServiceProvider(const base_connection::BaseConnection::ptr &con, const public_data::host_addr_t &host)
+                : con_(con), host_(host)
+            {
+            }
+
+            void insertService(const std::string &method)
+            {
+                std::unique_lock<std::mutex> lock(method_mtx_);
+                methods_.push_back(method);
+            }
+        };
+
         class ServiceProviderManager
         {
         public:
             using ptr = std::shared_ptr<ServiceProviderManager>;
-            // 服务提供者信息
-            struct ServiceProvider
-            {
-                using ptr = std::shared_ptr<ServiceProvider>;
-                base_connection::BaseConnection::ptr con_; // 当前提供者的连接信息
-                std::vector<std::string> methods_;         // 当前提供者可以提供的所有服务
-                public_data::host_addr_t host_;            // 当前提供者的主机信息
-
-                std::mutex method_mtx_; // 用于服务管理的线程安全
-
-                ServiceProvider(const base_connection::BaseConnection::ptr &con, const public_data::host_addr_t &host)
-                    : con_(con), host_(host)
-                {
-                }
-
-                void insertService(const std::string &method)
-                {
-                    std::unique_lock<std::mutex> lock(method_mtx_);
-                    methods_.push_back(method);
-                }
-            };
 
             // 添加服务提供者
             void insertProvider(const base_connection::BaseConnection::ptr &con, const std::string &method, const public_data::host_addr_t &host)
@@ -52,19 +53,26 @@ namespace rpc_server
                     std::unique_lock<std::mutex> lock(provider_mtx_);
                     // 建立连接和提供者之间的映射
                     // 查找是否存在对应的提供者
-                    auto pos = con_provider_.find(con);
-                    if (pos == con_provider_.end())
-                    {
-                        // 不存在就添加
-                        sp = std::make_shared<ServiceProvider>(con, host);
-                        con_provider_.insert({con, sp});
-                    }
-                    else
-                    {
-                        sp = pos->second; // 存在直接赋值
-                    }
+                    // auto pos = con_provider_.find(con);
+                    // if (pos == con_provider_.end())
+                    // {
+                    //     // 不存在就添加
+                    //     sp = std::make_shared<ServiceProvider>(con, host);
+                    //     con_provider_.insert({con, sp});
+                    // }
+                    // else
+                    // {
+                    //     sp = pos->second; // 存在直接赋值
+                    // }
+
+                    // auto pos = con_provider_.insert({con, std::make_shared<ServiceProvider>(con, host)});
+                    auto pos = con_provider_.try_emplace(con, std::make_shared<ServiceProvider>(con, host));
+                    sp = pos.first->second;
+
+                    // 使用try_emplace可以先查找key是否存在再创建对象,insert会先构造对象再去判断是否存在
 
                     // 找到指定服务对应的提供者映射数组，插入到该映射数组中
+                    // 此处使用引用确保修改有效
                     auto &provider = providers_[method];
                     provider.insert(sp);
                 }
@@ -113,6 +121,7 @@ namespace rpc_server
                 con_provider_.erase(con);
             }
 
+            // 根据指定服务获取可以提供该服务的所有服务提供者
             std::vector<public_data::host_addr_t> getServiceProviders(const std::string &method)
             {
                 std::unique_lock<std::mutex> lock(provider_mtx_);
@@ -136,30 +145,31 @@ namespace rpc_server
             std::unordered_map<base_connection::BaseConnection::ptr, ServiceProvider::ptr> con_provider_; // 管理连接和提供者
         };
 
+        // 服务发现者信息
+        struct ServiceDiscoverer
+        {
+            using ptr = std::shared_ptr<ServiceDiscoverer>;
+
+            base_connection::BaseConnection::ptr con_; // 发现过服务的客户端
+            std::vector<std::string> methods_;         // 客户端发现的服务
+            std::mutex method_mtx_;                    // 用于服务管理的线程安全
+
+            ServiceDiscoverer(const base_connection::BaseConnection::ptr &con)
+                : con_(con)
+            {
+            }
+
+            void insertService(const std::string &method)
+            {
+                std::unique_lock<std::mutex> lock(method_mtx_);
+                methods_.push_back(method);
+            }
+        };
+
         class ServiceDiscovererManager
         {
         public:
             using ptr = std::shared_ptr<ServiceDiscovererManager>;
-            // 服务发现者信息
-            struct ServiceDiscoverer
-            {
-                using ptr = std::shared_ptr<ServiceDiscoverer>;
-
-                base_connection::BaseConnection::ptr con_; // 发现过服务的客户端
-                std::vector<std::string> methods_;         // 客户端发现的服务
-                std::mutex method_mtx_;                    // 用于服务管理的线程安全
-
-                ServiceDiscoverer(const base_connection::BaseConnection::ptr &con)
-                    : con_(con)
-                {
-                }
-
-                void insertService(const std::string &method)
-                {
-                    std::unique_lock<std::mutex> lock(method_mtx_);
-                    methods_.push_back(method);
-                }
-            };
 
             // 添加发现者
             ServiceDiscoverer::ptr insertDiscoverer(const base_connection::BaseConnection::ptr &con, const std::string &method)
