@@ -65,7 +65,7 @@ namespace rpc_client
             }
             bool toHandleDiscoveryRequest(const std::string &method, public_data::host_addr_t &host)
             {
-                return discoverer_->handleDiscoveryRequest(client_->connection(), method, host);
+                return discoverer_->discoverHost(client_->connection(), method, host);
             }
 
             void shutdown()

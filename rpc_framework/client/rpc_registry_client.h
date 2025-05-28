@@ -60,12 +60,12 @@ namespace rpc_client
         };
 
         // 使用RR轮询的策略请求服务，提供指定函数的提供者信息和对应下标的结构
-        class MethodHost
+        class HostManager
         {
         public:
-            using ptr = std::shared_ptr<MethodHost>;
+            using ptr = std::shared_ptr<HostManager>;
 
-            MethodHost(const std::vector<public_data::host_addr_t> &hosts = std::vector<public_data::host_addr_t>())
+            HostManager(const std::vector<public_data::host_addr_t> &hosts = std::vector<public_data::host_addr_t>())
                 : hosts_(hosts), index_(0)
             {
             }
@@ -146,7 +146,7 @@ namespace rpc_client
                     if (pos == service_providers_.end())
                     {
                         // 不存在指定服务
-                        auto host = std::make_shared<MethodHost>();
+                        auto host = std::make_shared<HostManager>();
                         host->insertHost(msg->getHost());
                         service_providers_[method] = host;
                     }
@@ -179,12 +179,12 @@ namespace rpc_client
                 }
             }
 
-            // 处理服务发现请求
-            bool handleDiscoveryRequest(const base_connection::BaseConnection::ptr &con, const std::string &method, public_data::host_addr_t &host)
+            // 进行服务发现
+            bool discoverHost(const base_connection::BaseConnection::ptr &con, const std::string &method, public_data::host_addr_t &host)
             {
                 {
                     std::unique_lock<std::mutex> lock(manage_mtx_);
-                    // 判断是否存在指定的方法，如果存在，就直接插入到该方法对应的主机信息管理结构中
+                    // 判断是否存在指定的方法，如果存在，通过选择策略选择主机通过输出型参数返回给上层
                     auto pos = service_providers_.find(method);
                     if (pos != service_providers_.end())
                     {
@@ -226,7 +226,7 @@ namespace rpc_client
                 std::unique_lock<std::mutex> lock(manage_mtx_);
                 // 此时说明一定存在服务了
                 // 构建MethodHost对象
-                auto methodHost = std::make_shared<MethodHost>(service_resp->getHosts());
+                auto methodHost = std::make_shared<HostManager>(service_resp->getHosts());
                 // 获取一个host返回
                 host = methodHost->choostHost();
                 // 插入到映射表
@@ -237,7 +237,7 @@ namespace rpc_client
 
         private:
             std::mutex manage_mtx_;
-            std::unordered_map<std::string, MethodHost::ptr> service_providers_; // 每一个方法对应的所有提供者信息和方法映射表
+            std::unordered_map<std::string, HostManager::ptr> service_providers_; // 每一个方法对应的所有提供者信息和方法映射表
             requestor_rpc_framework::Requestor::ptr requestor_;
             // 客户端离线时的处理回调
             offlineCallback_t offline_cb_;
