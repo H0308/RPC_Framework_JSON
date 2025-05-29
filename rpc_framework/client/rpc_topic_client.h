@@ -39,7 +39,7 @@ namespace rpc_client
             // 订阅主题
             bool subscribeTopic(const base_connection::BaseConnection::ptr &con, const std::string &topic_name, const publishCallback &cb)
             {
-                // 先插入回调函数，防止后续刚订阅主题就有消息需要处理
+                // 先插入回调函数，防止后续刚订阅主题就有消息时可以立即处理
                 insertCallback(topic_name, cb);
                 bool ret = baseRequest(con, topic_name, public_data::TopicOptype::Topic_subscribe);
                 if(!ret)
@@ -137,7 +137,7 @@ namespace rpc_client
             void insertCallback(const std::string &topic_name, const publishCallback &cb)
             {
                 std::unique_lock<std::mutex> lock(manager_map_mtx_);
-                topic_callback_.insert({topic_name, cb});
+                topic_callback_.try_emplace(topic_name, cb);
             }
 
             // 删除回调函数接口

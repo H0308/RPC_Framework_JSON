@@ -14,6 +14,82 @@ namespace rpc_server
     using namespace log_system;
     namespace rpc_topic
     {
+        // 客户端连接和订阅的主题信息
+        struct Subscriber
+        {
+            using ptr = std::shared_ptr<Subscriber>;
+
+            Subscriber(const base_connection::BaseConnection::ptr &con)
+                : con_(con)
+            {
+            }
+
+            base_connection::BaseConnection::ptr con_;    // 客户端连接
+            std::unordered_set<std::string> topic_names_; // 当前客户端订阅的所有主题
+            std::mutex manage_set_mtx_;                   // 保证管理的线程安全
+
+            // 主题创建（添加）
+            void insertTopic(const std::string &topic_name)
+            {
+                std::unique_lock<std::mutex> lock(manage_set_mtx_);
+                // 直接插入，如果存在就不进行处理
+                // 使用emplace可能会构建对象，与insert相同
+                topic_names_.emplace(topic_name);
+            }
+
+            // 主题删除（移除）
+            void removeTopic(const std::string &topic_name)
+            {
+                std::unique_lock<std::mutex> lock(manage_set_mtx_);
+                auto it = topic_names_.find(topic_name);
+                if (it == topic_names_.end())
+                    return; // 不存在直接返回，不进行任何操作
+                topic_names_.erase(topic_name);
+            }
+        };
+
+        // 主题和订阅主题的发布者信息
+        struct Topic
+        {
+            using ptr = std::shared_ptr<Topic>;
+
+            Topic(const std::string &topic_name)
+                : topic_name_(topic_name)
+            {
+            }
+
+            std::string topic_name_;                         // 主题名称
+            std::unordered_set<Subscriber::ptr> subscibers_; // 所有订阅者
+            std::mutex manage_set_mtx_;                      // 保证管理的线程安全
+
+            // 主题订阅（添加订阅者）
+            void insertSubscriber(const Subscriber::ptr &subsciber)
+            {
+                std::unique_lock<std::mutex> lock(manage_set_mtx_);
+                subscibers_.emplace(subsciber);
+            }
+
+            // 主题取消订阅（移除订阅者）
+            void removeSubscriber(const Subscriber::ptr &subsciber)
+            {
+                std::unique_lock<std::mutex> lock(manage_set_mtx_);
+                auto pos = subscibers_.find(subsciber);
+                if (pos == subscibers_.end())
+                    return;
+                subscibers_.erase(subsciber);
+            }
+
+            // 主题信息的发布
+            void publicMessage(const base_message::BaseMessage::ptr &msg)
+            {
+                std::unique_lock<std::mutex> lock(manage_set_mtx_);
+                // 遍历连接集合发送消息
+                for (auto &subscriber : subscibers_)
+                    if (subscriber)
+                        subscriber->con_->send(msg);
+            }
+        };
+
         // 主题管理者
         class TopicManager
         {
@@ -33,10 +109,10 @@ namespace rpc_server
                 switch (topic_optype)
                 {
                 case public_data::TopicOptype::Topic_create:
-                    createTopic(con, msg); // 1. 主题创建
+                    createTopic(msg); // 1. 主题创建
                     break;
                 case public_data::TopicOptype::Topic_remove:
-                    removeTopic(con, msg); // 2. 主题删除
+                    removeTopic(msg); // 2. 主题删除
                     break;
                 case public_data::TopicOptype::Topic_subscribe:
                     ret = subscribeTopic(con, msg); // 3. 主题订阅
@@ -45,19 +121,19 @@ namespace rpc_server
                     cancelSubscribeTopic(con, msg); // 4. 主题取消订阅
                     break;
                 case public_data::TopicOptype::Topic_publish:
-                    ret = publishTopicMessage(con, msg); // 5. 主题发布
+                    ret = publishTopicMessage(msg); // 5. 主题发布
                     break;
                 default:
                     sendErrorResponse(con, msg, public_data::RCode::RCode_invalid_opType);
                     break;
                 }
 
-                if(!ret)
+                if (!ret)
                 {
                     sendErrorResponse(con, msg, public_data::RCode::RCode_not_found_topic);
                     return;
                 }
-                
+
                 sendTopicResponse(con, msg);
             }
 
@@ -75,7 +151,7 @@ namespace rpc_server
                     auto it_sub = con_subscriber_.find(con);
 
                     subscriber = it_sub->second;
-                    for(auto &topic_name : it_sub->second->topic_names_)
+                    for (auto &topic_name : it_sub->second->topic_names_)
                     {
                         auto it_topic = topics_.find(topic_name);
                         topics.insert(it_topic->second);
@@ -89,23 +165,22 @@ namespace rpc_server
 
         private:
             // 新增主题
-            void createTopic(const base_connection::BaseConnection::ptr &con, const request_message::TopicRequest::ptr &msg)
+            void createTopic(const request_message::TopicRequest::ptr &msg)
             {
                 // 判断主题是否存在，如果不存在则创建新的Topic对象插入到集合中
                 std::unique_lock<std::mutex> lock(manage_map_mtx_);
                 std::string topic_name = msg->getTopicName();
-                auto it = topics_.find(topic_name);
-                if (it != topics_.end())
-                {
-                    LOG(Level::Warning, "指定主题已经存在");
-                    return;
-                }
-                Topic::ptr topic = std::make_shared<Topic>(topic_name);
-                topics_.insert({topic_name, topic});
+                // auto it = topics_.find(topic_name);
+                // if (it != topics_.end())
+                // {
+                //     LOG(Level::Warning, "指定主题已经存在");
+                //     return;
+                // }
+                topics_.try_emplace(topic_name, std::make_shared<Topic>(topic_name));
             }
 
             // 主题删除
-            void removeTopic(const base_connection::BaseConnection::ptr &con, const request_message::TopicRequest::ptr &msg)
+            void removeTopic(const request_message::TopicRequest::ptr &msg)
             {
                 // 获取到指定的Topic对象指针
                 std::unordered_set<Subscriber::ptr> subscribers;
@@ -115,10 +190,7 @@ namespace rpc_server
                     // 根据获取到的Topic找到其中的管理订阅者连接的集合
                     auto it_topic = topics_.find(topic_name);
                     if (it_topic == topics_.end())
-                    {
-                        LOG(Level::Warning, "不存在指定的主题");
                         return;
-                    }
                     // 根据订阅者集合获取到订阅该主题的所有连接
                     subscribers = it_topic->second->subscibers_;
                     // 再从主题管理集合中移除该主题
@@ -140,28 +212,31 @@ namespace rpc_server
                 {
                     std::unique_lock<std::mutex> lock(manage_map_mtx_);
                     auto it_topic = topics_.find(topic_name);
-                    // 不存在则说明指定的主题不存在，此时需要报错防止后续行为异常
+                    // 不存在则说明指定的主题不存在
                     if (it_topic == topics_.end())
                     {
-                        LOG(Level::Warning, "不存在指定的主题");
+                        LOG(Level::Warning, "指定主题不存在，订阅失败");
                         return false;
                     }
 
                     // 存在
                     topic = it_topic->second;
 
-                    auto it_sub = con_subscriber_.find(con);
-                    if (it_sub == con_subscriber_.end())
-                    {
-                        // 不存在则创建
-                        subscriber = std::make_shared<Subscriber>(con);
-                        con_subscriber_.insert({con, subscriber});
-                    }
-                    else
-                    {
-                        // 否则直接使用已有的
-                        subscriber = it_sub->second;
-                    }
+                    // auto it_sub = con_subscriber_.find(con);
+                    // if (it_sub == con_subscriber_.end())
+                    // {
+                    //     // 不存在则创建
+                    //     subscriber = std::make_shared<Subscriber>(con);
+                    //     con_subscriber_.insert({con, subscriber});
+                    // }
+                    // else
+                    // {
+                    //     // 否则直接使用已有的
+                    //     subscriber = it_sub->second;
+                    // }
+
+                    auto pos = con_subscriber_.try_emplace(con, std::make_shared<Subscriber>(con));
+                    subscriber = pos.first->second;
                 }
 
                 if (topic && subscriber)
@@ -186,17 +261,11 @@ namespace rpc_server
                     auto it_topic = topics_.find(topic_name);
                     // 不存在则说明指定的主题不存在，此时需要报错防止后续行为异常
                     if (it_topic != topics_.end())
-                    {
-                        // 存在直接使用，不存在不处理
-                        topic = it_topic->second;
-                    }
+                        topic = it_topic->second; // 存在直接使用，不存在不处理
 
                     auto it_sub = con_subscriber_.find(con);
                     if (it_sub != con_subscriber_.end())
-                    {
-                        // 存在直接使用，不存在不处理
-                        subscriber = it_sub->second;
-                    }
+                        subscriber = it_sub->second; // 存在直接使用，不存在不处理
                 }
 
                 if (topic && subscriber)
@@ -207,7 +276,7 @@ namespace rpc_server
             }
 
             // 主题发布
-            bool publishTopicMessage(const base_connection::BaseConnection::ptr &con, const request_message::TopicRequest::ptr &msg)
+            bool publishTopicMessage(const request_message::TopicRequest::ptr &msg)
             {
                 // 找到指定主题对应的Topic，调用Topic中的消息发布接口发布消息
                 Topic::ptr topic;
@@ -255,87 +324,6 @@ namespace rpc_server
 
                 con->send(topic_resp);
             }
-
-        private:
-            // 客户端连接和订阅的主题信息
-            struct Subscriber
-            {
-                using ptr = std::shared_ptr<Subscriber>;
-
-                Subscriber(const base_connection::BaseConnection::ptr &con)
-                    : con_(con)
-                {
-                }
-
-                base_connection::BaseConnection::ptr con_;    // 客户端连接
-                std::unordered_set<std::string> topic_names_; // 当前客户端订阅的所有主题
-                std::mutex manage_set_mtx_;                   // 保证管理的线程安全
-
-                // 主题创建（添加）
-                void insertTopic(const std::string &topic_name)
-                {
-                    std::unique_lock<std::mutex> lock(manage_set_mtx_);
-                    auto it = topic_names_.find(topic_name);
-                    if (it != topic_names_.end())
-                    {
-                        LOG(Level::Warning, "已存在指定的主题");
-                        return;
-                    }
-                    topic_names_.insert(topic_name);
-                }
-
-                // 主题删除（移除）
-                void removeTopic(const std::string &topic_name)
-                {
-                    std::unique_lock<std::mutex> lock(manage_set_mtx_);
-                    auto it = topic_names_.find(topic_name);
-                    if (it != topic_names_.end())
-                    {
-                        LOG(Level::Warning, "已存在指定的主题");
-                        return;
-                    }
-                    topic_names_.erase(topic_name);
-                }
-            };
-
-            // 主题和订阅主题的发布者信息
-            struct Topic
-            {
-                using ptr = std::shared_ptr<Topic>;
-
-                Topic(const std::string &topic_name)
-                    : topic_name_(topic_name)
-                {
-                }
-
-                std::string topic_name_;                         // 主题名称
-                std::unordered_set<Subscriber::ptr> subscibers_; // 所有订阅者
-                std::mutex manage_set_mtx_;                      // 保证管理的线程安全
-
-                // 主题订阅（添加订阅者）
-                void insertSubscriber(const Subscriber::ptr &subsciber)
-                {
-                    std::unique_lock<std::mutex> lock(manage_set_mtx_);
-                    subscibers_.insert(subsciber);
-                }
-
-                // 主题取消订阅（移除订阅者）
-                void removeSubscriber(const Subscriber::ptr &subsciber)
-                {
-                    std::unique_lock<std::mutex> lock(manage_set_mtx_);
-                    subscibers_.erase(subsciber);
-                }
-
-                // 主题信息的发布
-                void publicMessage(const base_message::BaseMessage::ptr &msg)
-                {
-                    std::unique_lock<std::mutex> lock(manage_set_mtx_);
-                    // 遍历连接集合发送消息
-                    for (auto &subscriber : subscibers_)
-                        if (subscriber)
-                            subscriber->con_->send(msg);
-                }
-            };
 
         private:
             std::mutex manage_map_mtx_;
