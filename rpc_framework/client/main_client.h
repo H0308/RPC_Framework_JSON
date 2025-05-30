@@ -36,7 +36,7 @@ namespace rpc_client
             }
 
         private:
-            // requestor需要在provider之前定义，因为provider依赖requestor
+            // requestor需要在provider之前声明，因为provider依赖requestor
             requestor_rpc_framework::Requestor::ptr requestor_;
             rpc_client::rpc_registry::Provider::ptr provider_;
             dispatcher_rpc_framework::Dispatcher::ptr dispatcher_;
@@ -63,15 +63,15 @@ namespace rpc_client
                 // 连接服务端
                 client_->connect();
             }
-            bool toHandleDiscoveryRequest(const std::string &method, public_data::host_addr_t &host)
+            bool toDiscoverHost(const std::string &method, public_data::host_addr_t &host)
             {
                 return discoverer_->discoverHost(client_->connection(), method, host);
             }
 
-            void shutdown()
-            {
-                client_->shutdown();
-            }
+            // void shutdown()
+            // {
+            //     client_->shutdown();
+            // }
 
         private:
             // requestor在discoverer之前
@@ -170,7 +170,7 @@ namespace rpc_client
                 if (isToDiscover_)
                 {
                     public_data::host_addr_t host;
-                    bool ret = discoverer_client_->toHandleDiscoveryRequest(method, host);
+                    bool ret = discoverer_client_->toDiscoverHost(method, host);
                     if (!ret)
                     {
                         LOG(Level::Warning, "Rpc客户端服务发现失败");
@@ -211,7 +211,7 @@ namespace rpc_client
             void insertClient(const public_data::host_addr_t &host, const base_client::BaseClient::ptr &client)
             {
                 std::unique_lock<std::mutex> lock(manage_map_mtx_);
-                clients_.insert({host, client});
+                clients_.try_emplace(host, client);
             }
 
             void removeClient(const public_data::host_addr_t &host)
@@ -259,7 +259,7 @@ namespace rpc_client
             dispatcher_rpc_framework::Dispatcher::ptr dispatcher_;
             base_client::BaseClient::ptr client_;
             std::mutex manage_map_mtx_;
-            std::unordered_map<public_data::host_addr_t, base_client::BaseClient::ptr, hostAddrHash> clients_; // 已经发现的所有可以提供指定RPC服务的服务端
+            std::unordered_map<public_data::host_addr_t, base_client::BaseClient::ptr, hostAddrHash> clients_; // 可以正常发起RPC请求的客户端
         };
 
         class TopicClient
